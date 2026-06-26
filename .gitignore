@@ -1,5 +1,8 @@
 .claudian/
 
+# 私密文件夹，不提交不远程同步
+私密/
+
 # Feishu local sync / CI-CD helpers
 scripts/FEISHU_SYNC.md
 scripts/install-feishu-sync-hook.ps1
@@ -11,3 +14,4 @@ scripts/hooks/pre-push
 .claude/settings.local.json
 CLAUDE.local.md
 .claude_temp/
+.claude/settings.json
