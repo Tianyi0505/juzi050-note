@@ -13,6 +13,7 @@
 - 除非用户明确要求，不主动修改 `.obsidian/`、`.git/`、`.claudian/`、`.claude/` 等配置目录。
 - 不读取、输出或整理密钥、token、`.env`、会话记录等敏感内容。
 - 涉及批量删除/移动、`git push`、`git reset`、`git clean`、同步到外部服务等操作时，先说明影响并等待确认。
+- **每次提交整个工作区（`git add -A` + `git commit`）之前，必须先删除 `tmp/` 目录**（`rm -rf tmp`），该目录仅存放中间产物，不应入库。
 
 ## Obsidian 笔记规范
 
