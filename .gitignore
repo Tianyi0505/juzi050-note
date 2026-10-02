@@ -15,3 +15,8 @@ scripts/hooks/pre-push
 CLAUDE.local.md
 .claude_temp/
 .claude/settings.json
+
+# local
+/面经
+/面试
+/个人任务
