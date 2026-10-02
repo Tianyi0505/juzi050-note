@@ -1,0 +1,927 @@
+         开源软件供应链点亮计划——暑期 2026 项⽬申请书
+
+         Apache ShenYu 灰度发布与流量分区能⼒增强
+
+申请基本信息
+
+•   申请⼈：王⼦昕
+
+•   联系邮箱：2034946972@qq.com
+
+•   GitHub 主页：https://github.com/SouthwestAsiaFloat
+
+•   项⽬编号：2662f0084
+
+•   项⽬社区：Apache ShenYu
+
+•   项⽬导师：何凤恩（hefengen@apache.org）
+
+•   难度与周期：进阶；4 个⽉（16 周）
+
+•   技术栈与平台：Java、Spring Boot、Spring WebFlux/Reactor；RISC-V64
+
+•   上游仓库：github.com/apache/shenyu；github.com/apache/shenyu-dashboard
+
+
+
+
+⼀、项⽬调研
+
+1.1 项⽬背景与价值
+
+    Apache ShenYu 是异步、⾼性能、跨语⾔的 API ⽹关。请求进⼊⽹关后，会依次经过鉴权、限
+
+流、路由和代理等插件，再由 Divide 插件选择后端服务实例。⽣产环境上线新版本时，通常不能
+
+⼀次接收全部流量，因此需要先让少量⽤户访问新版本，观察稳定性后再逐步扩⼤范围，这就是
+
+常说的“灰度发布”。在⽣产情况下，我们希望⽹关有能⼒让满⾜某⼀个条件的客户端，⽆论重复多
+
+少次，都能尽量连接到同⼀个服务集群，然后再进⾏负载均衡，因为这样才能保证对于客户端的
+
+体验来说⼤致是稳定的，不会出现抖动的情况，但是如今的 DividePlugin 的具体实现并没有做到这
+
+⼀点，所以可能会导致同⼀个客户端本次连接到⽣产集群，下⼀次连接就连接到了灰度发布的集
+
+群，这是需要我们完善的，因此有了本课题。
+
+    本申请书把主要承载⽣产流量的版本称为 Stable（稳定版本），把正在⼩流量验证的新版本称
+
+为 Canary（灰度版本）。项⽬⽬标不是发明⼀种新的负载均衡算法，⽽是在负载均衡之前增加“流
+量分区”：先判断请求属于 Stable 还是 Canary，再从对应分区的健康实例中继续使⽤ ShenYu 原有
+
+的轮询、随机或 Hash 算法。
+
+
+
+
+                            图 1 Stable 与 Canary 流量分区⽰例
+
+1.2 需求分析
+
+项⽬需要为 Divide Rule 增加独⽴的 Canary 配置：可按 Header、Cookie、Query、IP、租户或⽤户
+
+等条件圈定灰度⼈群；在命中⼈群内按固定⽐例放量；⽤ Sticky Key 的稳定 Hash 保证同⼀⽤户在
+
+⽐例不变时尽量落到同⼀分区；再通过 Upstream Labels 划分 Stable 与 Canary 实例。
+
+还需处理⽬标分区⽆健康实例时的 STABLE 回退或 REJECT 拒绝策略，保证 Failover 重试继续使⽤
+
+⾸次确定的分区；补齐 Admin/Dashboard 的配置与校验、请求量和回退次数等指标，并保持旧
+
+gray=true/false 配置在未启⽤新版规则时⾏为不变。
+
+
+1.3 当前调⽤链与主要问题
+
+   当 前 主 链 路 可 概 括 为 ： ShenyuWebHandler 创 建 插 件 链 → AbstractShenyuPlugin 匹 配
+
+Selector/Rule → DividePlugin 读取 DivideRuleHandle → UpstreamCacheManager 获取健康实例 →
+
+LoadbalancerUtils 选 择 实 例   → URIPlugin 构 造 地 址    → HTTP Client 转 发 ； 失 败 时
+
+DefaultRetryStrategy 再次选择实例。
+
+
+
+
+                                        2
+                                   图 2 ShenYu 配置⾯与请求数据⾯关系
+
+现有实现会较早按旧 gray 字段筛选实例，DividePlugin 随后直接做负载均衡，缺少按请求执⾏的独
+
+⽴分区步骤。若简单采⽤随机⽐例，同⼀⽤户会在新旧版本间跳动；重试重新选池也可能跨分区。
+
+此外还需保证 Labels 动态更新完整、Dashboard 保存 Props 时不丢未知字段，并避免指标记录⽤户
+
+标识造成⾼基数或隐私问题。
+
+
+
+⼆、设计⽅案
+
+2.1 配置与数据结构设计
+
+     拟在 DivideRuleHandle 中增加可为空的 CanaryConfig。canary == null 表⽰没有配置新版规则，
+
+继续执⾏旧 gray 语义；canary 不为空但 enabled=false 时只⾛ Stable；enabled=true 时执⾏条件、⽐
+
+例、标签和回退逻辑。若只想暂停 Canary 流量但保留配置，也可将 percentage 设为 0。关键结构如
+
+下：
+
+public final class DivideRuleHandle {
+private String loadBalance;
+private int retry;
+private long timeout;
+
+    private CanaryConfig canary;
+}
+
+public final class CanaryConfig {
+    private Boolean enabled;
+    private List<ConditionData> conditions;
+    private Integer matchMode;            // AND / OR
+    private Integer percentage;           // 0..100
+    private StickyKey stickyKey;            // header/cookie/query/ip
+    private Map<String, String> canaryLabels;
+    private Map<String, String> stableLabels;
+    private CanaryFallbackPolicy fallbackPolicy; // STABLE / REJECT
+}
+
+
+
+
+                                            3
+2.2 灰度分区
+
+    灰度分区在负载均衡之前完成。对于灰度决策，我们可以认为，本项⽬的⽬标是相较于原来
+
+的请求处理链，在取得路由上下⽂和选实例并转发之间加⼀个决定本请求 Stable / Canary 的流程。
+
+我们把决定⼀个请求属于 Stable 还是 Canary 的服务抽象成 CanaryDecision 的组件，以下是字段定
+
+义
+
+public interface CanaryDecisionService {
+
+    CanaryDecision decide(
+        ServerWebExchange exchange,
+        RuleData ruleData,
+        CanaryConfig canaryConfig
+    );
+}
+
+    其默认实现是
+
+public class DefaultCanaryDecisionService
+        implements CanaryDecisionService {
+    // 条件匹配、获取 stickyKey、⼀致性哈希、百分⽐判断
+}
+
+
+
+
+    DefaultCanaryDecisionService 负 责 完 整 的 默 认 流 程 ： 先 复 ⽤      ConditionData 和
+
+MatchStrategyFactory 判断请求是否属于灰度⼈群；conditions 为空时允许全部请求参加百分⽐分流，
+
+条件未命中则进⼊ Stable。随后读取 Sticky Key，并⽤固定 Hash 算法和 Rule 级盐值计算 0 ⾄ 9999
+
+的桶位，再与 percentage 对应的阈值⽐较。
+
+    Sticky Key 可以来⾃ Header、Cookie、Query 或客户端 IP。缺少配置值时默认进⼊ Stable；
+
+percentage 为 0 时所有命中请求进⼊ Stable，为 100 时所有命中请求进⼊ Canary。同⼀ Rule、同⼀
+
+配置和同⼀ Sticky Key 得到稳定结果，⽐例变化时仅跨过新阈值的桶改变分区。
+
+    DividePluginConfiguration 注册默认 CanaryDecisionService，并通过构造器注⼊ DividePlugin。
+
+请求命中 Divide Rule 后，插件解析 DivideRuleHandle，调⽤决策服务，并把返回结果交给后续实例
+
+过滤。分区结果在同⼀次请求中只计算⼀次，随后由 DividePlugin 写⼊ CanaryRouteContext，供转
+
+发、重试和指标模块复⽤。
+
+CanaryDecision decision = canaryDecisionService.decide(
+        exchange,
+        ruleData,
+        divideRuleHandle.getCanary()
+);
+
+
+
+
+                                             4
+2.3 Divide 插件集成
+
+    CanaryDecisionService 只回答请求属于哪个分区，CanaryUpstreamResolver 再把分区决定转换
+
+成实际路由。这样可以把条件与⽐例计算、标签过滤、空池处理和具体实例负载均衡分开测试。
+
+    调⽤顺序为：DividePlugin 先读取 DivideRuleHandle 和完整健康 Upstream。如果存在有效的
+
+specify-domain，则继续使⽤ ShenYu 原有的指定节点逻辑并跳过⾃动分区；否则读取或计算
+
+CanaryDecision，再进⼊标签过滤。
+
+    CanaryUpstreamResolver 根据 Upstream.metadata 过滤候选实例。如果分区是 Canary，使⽤
+
+canaryLabels，如果是 Stable， 使⽤ stableLabels；配置多个标签时，实例必须全部满⾜。标签匹配
+
+只缩⼩健康候选池，不修改 UpstreamCacheManager 中的共享对象。
+
+    若请求期望进⼊ Canary，但 Canary 池没有健康实例，fallbackPolicy=STABLE 时改⽤ Stable 池，
+
+并 同 时 保 留         desiredPartition=canary 、 effectivePartition=stable 和   fallbackReason ；
+
+fallbackPolicy=REJECT 时直接返回⽆可⽤ Upstream。Stable 池为空时默认拒绝，不⾃动切到
+
+Canary。
+
+    候选池确定后继续调⽤ LoadbalancerUtils.getForExchange，沿⽤ RoundRobin、Random 或
+
+Hash 选择具体实例，不新增 Canary 专⽤负载均衡器。DefaultRetryStrategy 读取⾸次请求的
+
+effectivePartition，在最新健康实例中重新过滤并排除失败节点，重试期间不重新计算 Percentage。
+
+    当 DivideRuleHandle 中没有 CanaryConfig 时，DividePlugin 和 Upstream 数据处理链继续执⾏
+
+旧 gray=true/false 的 独 占 池 ⾏ 为 ； 存 在 CanaryConfig 且 enabled=false 时 只 ⾛ Stable ； 只 有
+
+enabled=true 时才启⽤条件、确定性分桶和 Labels 分区。
+
+    以下是该组件的字段定义
+
+public interface CanaryUpstreamResolver {
+
+    CanaryUpstreamResult resolve(
+        List<Upstream> healthyUpstreams,
+        CanaryDecision decision,
+        CanaryConfig config
+    );
+}
+
+
+
+
+                                            5
+                     图 3 灰度决策与 Divide 请求处理的总体流程
+
+2.4 Admin 配置与同步
+
+本部分负责解决两个问题：
+
+
+  •   ⽤户如何在 Admin 中配置灰度规则和 Upstream 标签。
+  •   配置修改后如何同步到⽹关并动态⽣效。
+
+
+2.4.1 灰度规则配置
+
+在 Divide 规则编辑页⾯中增加灰度发布配置，包括：
+
+
+  •   是否启⽤灰度发布；
+  •   灰度匹配条件及 AND/OR 匹配模式；
+  •   灰度流量百分⽐；
+  •   黏性标识来源，例如 Header、Cookie、Query；
+  •   canary 和 stable 分区对应的标签；
+  •   canary 节点不可⽤时的回退策略。
+
+
+
+
+                                 6
+这些配置最终作为 DivideRuleHandle 中的嵌套 canary 对象保存：
+
+{
+    "loadBalance": "roundRobin",
+    "retry": 2,
+    "canary": {
+      "enabled": true,
+      "percentage": 20,
+      "stickyKey": {
+         "paramType": "header",
+         "paramName": "X-User-Id"
+      },
+      "canaryLabels": {
+         "release": "canary"
+      },
+      "stableLabels": {
+         "release": "stable"
+      },
+      "fallbackPolicy": "STABLE"
+    }
+}
+
+
+
+
+Admin 保存时不需要为每个灰度字段增加单独的数据库列，⽽是继续使⽤现有的 rule.handle 字
+
+段保存完整 JSON。
+
+规则配置的同步链路为：
+
+Admin 页⾯
+    ↓
+RuleDTO.handle
+    ↓
+RuleDO.handle 写⼊数据库
+    ↓
+RuleEventPublisher 发布配置变更
+    ↓
+WebSocket / HTTP / ZooKeeper 等同步通道
+    ↓
+RuleData.handle 到达⽹关
+    ↓
+DividePluginDataHandler 反序列化
+    ↓
+得到 DivideRuleHandle 并写⼊本地缓存
+
+因此，在 DivideRuleHandle 中增加 CanaryConfig 后，可以继续复⽤ ShenYu 现有的规则同步
+
+机制，不需要设计新的灰度配置同步协议。
+
+
+
+
+                                     7
+2.4.2 Upstream 标签配置
+
+在 Upstream 配置页⾯增加 labels 键值对输⼊能⼒，例如：
+
+{
+    "warmup": 10,
+    "gray": false,
+    "labels": {
+      "release": "canary",
+      "region": "cn-east"
+    }
+}
+
+Upstream 标签优先存放在已有的 discovery_upstream.props 扩展字段中，并随
+
+DiscoveryUpstreamData ⼀起同步。
+
+同步链路为：
+
+Admin 或服务注册
+    ↓
+DiscoveryUpstreamDTO.props
+    ↓
+discovery_upstream.props
+    ↓
+DiscoverySyncData
+    ↓
+配置同步通道
+    ↓
+DivideUpstreamDataHandler
+    ↓
+解析 labels 并构造 Upstream
+    ↓
+UpstreamCacheManager
+⽹关端需要修改 DivideUpstreamDataHandler，将嵌套的 labels 解析为 Map<String,
+
+String>，并保存到 Upstream.metadata 中，供 DividePlugin 进⾏分区过滤。
+
+同时需要保证 Upstream 缓存更新时，gray 和 metadata 也能够随配置变化正确更新。
+
+2.4.3 配置校验
+
+Admin 保存配置前应进⾏基本校验：
+
+
+     •   percentage 的取值范围为 0～100；
+     •   配置百分⽐灰度时，stickyKey 必须能够确定参数类型和参数名称；
+     •   canaryLabels 和 stableLabels 不应完全相同；
+     •   fallbackPolicy 必须为系统⽀持的固定值；
+     •   conditions 中的参数类型和匹配操作符必须有效。
+
+
+对于不合法的配置，Admin 应在保存阶段返回明确的错误信息，避免错误配置同步到所有⽹关节
+
+点。
+
+
+                                    8
+2.4.4 向后兼容
+
+新⽅案需要继续⽀持已有的 gray=true/false 配置：
+
+没有配置 CanaryConfig
+   → 继续执⾏原有 gray 逻辑
+
+
+配置并启⽤ CanaryConfig
+   → 执⾏新的 labels 分区逻辑
+
+Admin 查询历史规则和 Upstream 时，仍然需要正常展⽰已有的 gray 字段，不能强制将历史数据
+
+迁移为 labels。
+
+解析 props 时，新的实现需要同时⽀持：
+
+
+   •   旧版 Properties 风格的标量字段；
+   •   新版 JSON 中嵌套的 labels 对象。
+
+
+第⼀阶段优先复⽤ rule.handle 和 discovery_upstream.props 等已有扩展字段，不进⾏⼤
+
+范围数据库结构调整。但需要评估 rule.handle 的字段长度，避免嵌套灰度配置较多时超过数据
+
+库限制。
+
+
+2.5 指标与可观测性
+
+灰度功能上线后，需要能够回答以下问题：
+
+
+   •   当前有多少请求进⼊了 stable 和 canary？
+   •   是否发⽣了 canary 回退 stable？
+   •   两个分区的成功率和响应时间是否存在明显差异？
+   •   某个请求为什么进⼊了当前分区？
+
+
+2.5.1 复用现有 Metrics 能力
+
+项⽬复⽤ ShenYu 已有的 MetricsPlugin、MetricsReporter 和 MetricsRegister SPI，不单
+
+独建设新的指标系统。
+
+建议由 Divide 插件将灰度上下⽂写⼊ exchange attributes：
+
+selectorId
+ruleId
+desiredPartition
+effectivePartition
+fallbackReason
+decisionDuration
+请求完成后，再由 MetricsPlugin 读取这些属性，根据最终 HTTP 状态记录指标。
+
+
+
+                                   9
+调⽤关系为：
+
+MetricsPlugin 开始统计请求
+        ↓
+DividePlugin 完成灰度决策和节点选择
+        ↓
+将 CanaryRouteContext 写⼊ exchange
+        ↓
+请求转发完成
+        ↓
+MetricsPlugin 读取最终状态和灰度上下⽂
+        ↓
+通过 MetricsReporter 上报指标
+
+这种⽅式可以避免 shenyu-plugin-divide 直接依赖 shenyu-plugin-metrics。即使⽤户没
+
+有开启 Metrics 插件，也不会影响 Divide 的正常路由。
+
+2.5.2 MVP 指标
+
+建议 MVP 提供以下指标：
+
+
+                             指标                                            作⽤
+
+
+shenyu_canary_requests_total{selector,rule,partition,outcome}    统计各分区请求量及请求结果
+
+
+shenyu_canary_fallback_total{selector,rule,reason}               统计灰度回退次数及原因
+
+
+shenyu_canary_request_duration_millis{selector,rule,partition}   对⽐ stable 和 canary 的请求延迟
+
+
+                                                                 可选指标：统计灰度决策本⾝的耗
+shenyu_canary_decision_duration_millis{selector,rule}
+                                                                 时
+
+其中：
+
+
+   •   partition 只允许 stable、canary；
+   •   outcome 只允许 success、error、reject；
+   •   reason 使⽤固定枚举，例如 canary_pool_empty、no_matching_upstream；
+   •   发⽣ fallback 后，partition 应记录实际使⽤的分区，⽽不是最初期望的分区。
+
+
+错误结果不能只通过程序是否抛出异常判断，因为 HTTP 4xx、5xx 可能不会产⽣ Reactor 异常，还
+
+需要结合最终响应状态码判断。
+
+
+
+
+                                              10
+2.5.3 控制指标基数
+
+Prometheus 会为每⼀种标签组合创建⼀条时间序列。如果将⽤户 ID 或请求 ID 作为指标标签，会
+
+产⽣⼤量时间序列并占⽤内存。
+
+因此，指标中只允许使⽤数量有限的配置维度和枚举值，例如：
+
+selector、rule、partition、outcome、reason
+
+禁⽌使⽤：
+
+⽤户 ID
+请求 ID
+stickyKey 的实际值
+Cookie 内容
+Header 内容
+原始 URL 参数
+异常⽂本
+
+2.5.4 日志记录
+
+普通 stable/canary 决策可以使⽤ debug ⽇志；发⽣ fallback 或 reject 时使⽤ warn ⽇志。
+
+⽇志中可以记录：
+
+selectorId
+ruleId
+desiredPartition
+effectivePartition
+fallbackReason
+例如：
+
+canary route fallback:
+selectorId=<selectorId>,
+ruleId=<ruleId>,
+desiredPartition=canary,
+effectivePartition=stable,
+reason=canary_pool_empty
+⽇志中不能打印⽤于灰度判断的 Header、Cookie、⽤户 ID 等原始值，也不应直接输出完整的灰度
+
+规则对象。
+
+
+
+
+2.6 模块职责与调⽤关系
+
+ 核⼼变化集中在配置模型、请求决策、实例过滤和重试复⽤四处。现有负载均衡器只接收已过
+
+滤的候选池，⽆需理解 Canary 语义；具体类名会在与导师和社区确认后按上游代码风格调整。
+
+
+
+
+                                         11
+        模块 / 类                        改造内容                              作⽤
+
+    DivideRuleHandle /      新增可空 Canary 配置、StickyKey 与枚
+                                                          建⽴ Rule 级配置和兼容边界
+      CanaryConfig                       举
+
+  CanaryDecisionService      条件匹配、固定 Hash、Percentage      只决定 Stable 或 Canary
+
+ CanaryUpstreamResolver /   按 Labels 过滤、Fallback，再调⽤现有
+                                                          把分区和具体实例选择解耦
+       DividePlugin                      LB
+
+      DataHandler /         同步完整 Upstream，解析并动态更新
+                                                          保证新旧配置与运⾏时更新⼀致
+  UpstreamCacheManager                  Labels
+
+   DefaultRetryStrategy        读取⾸次 CanaryRouteContext    Failover 重试不跨分区
+
+    Admin / Dashboard       配置校验、编辑、回显与 Props 合并          提供可操作的管理⼊⼜
+
+      MetricsPlugin            请求、回退和决策耗时指标               ⽀持观测、告警与回滚判断
+
+
+
+
+三、实施⽅案
+
+3.1 总体实施思路
+
+    项⽬按“先确认数据契约，再实现纯决策组件，然后接⼊路由和重试，最后补齐管理端、指标
+
+与⽂档”的顺序推进。每⼀步都先建⽴可独⽴运⾏的测试，再接⼊下⼀条链路，以便出现兼容问题
+
+时能够快速定位和回滚。
+
+    新 版 能 ⼒ 默 认 关 闭 。 规 则 没 有 CanaryConfig 时 ， ⽹ 关 继 续 执 ⾏ 旧 gray 逻 辑 ； 存 在
+
+CanaryConfig 且 enabled=false 时只⾛ Stable；只有 enabled=true 时才启⽤新的条件匹配、确定性分
+
+桶和标签分池。实现继续使⽤ ShenYu 现有 Java、Spring Boot、Spring WebFlux/Reactor、Gson 和
+
+Metrics SPI，不引⼊新的分布式存储。
+
+
+3.2 分阶段实施
+
+    代码按可独⽴评审的⼩型 PR 提交。模型与兼容代码先于请求主链路合⼊，Divide 与重试改造
+
+在稳定接⼜上开发，管理端和可观测性随后接⼊。每个 PR 同时提交对应测试，减少社区评审时的
+
+上下⽂负担。
+
+
+
+
+                                                 12
+3.2.1 现有实现梳理与方案确认
+
+    ⾸先基于最新主线跑通 DividePlugin、DivideUpstreamDataHandler、UpstreamCacheManager、
+
+HTTP Client 、 DefaultRetryStrategy 和     Admin 同 步 链 路 ， 确 认            RuleData.handle 、
+
+DiscoveryUpstreamData.props 与 ServerWebExchange 的数据边界。同步核对 PR #6317 已包含的
+
+metadata 传递改动，避免重复实现。
+
+    这⼀阶段与导师确认字段默认值、conditions 为空、Sticky Key 缺失、0% 和 100%、Canary 空
+
+池、Stable 空池、specify-domain 以及 legacy gray 的准确语义，并形成数据字典、类职责清单和最⼩
+
+可运⾏测试环境。
+
+3.2.2 配置模型与兼容解析
+
+    在     shenyu-common 中 增 加        CanaryConfig 、 StickyKeyConfig 、 CanaryPartition 和
+
+CanaryFallbackPolicy ， 扩 展 DivideRuleHandle 的 序 列 化 与 反 序 列 化 。 Upstream 标 签 复 ⽤ 现 有
+
+metadata，在 builder、缓存增量更新和防御性复制中完整传递，不再增加含义重复的字段。
+
+    DivideUpstreamDataHandler 使⽤结构化 JSON 解析 nested labels，同时保留 warmup、gray、
+
+healthCheckEnabled 等旧 Properties 标量字段。单个实例的 Props ⾮法时记录明确错误并隔离该条数
+
+据，不能让整个 Selector 的更新链路失控。该阶段补齐 DTO、JSON 往返、旧配置组合和动态更新
+
+测试。
+
+3.2.3 灰度分区决策
+
+    实现 CanaryDecisionService 与 DefaultCanaryDecisionService。条件判断复⽤ ConditionData 和
+
+MatchStrategyFactory；conditions 为空时允许纯百分⽐灰度，条件未命中或 Sticky Key 缺失时进⼊
+
+Stable。
+
+    百分⽐使⽤确定性 Hash 分桶，⽽不是每次随机选择。实现固定 Hash 算法、UTF-8 编码、Rule
+
+级盐值和 0 ⾄ 9999 桶；同⼀ Rule、同⼀配置和同⼀ Sticky Key 得到相同分区。⽐例改变时，只有跨
+
+过新阈值的桶改变分区。0% 全部进⼊ Stable，100% 的命中请求全部进⼊ Canary。
+
+    ⾸次决策把          desiredPartition 、 effectivePartition 和   fallbackReason 保 存 到 不 可 变
+
+CanaryRouteContext，并将实际分区写⼊ SHENYU_CANARY_PARTITION。后续重试和指标读取
+
+该上下⽂，不重新计算分桶，也不复⽤负载均衡器⾃⼰的 Hash attribute。
+
+
+
+
+                                            13
+3.2.4 Divide 插件与重试流程
+
+    在 DividePluginConfiguration 中注册默认决策实现，通过构造器注⼊ DividePlugin，并增加
+
+starter 装配测试。有效的 specify-domain 继续绕过⾃动分区；未命中时才获取完整健康 Upstream，
+
+由 CanaryUpstreamResolver 按⽬标 Labels 全量匹配并处理 STABLE 或 REJECT 空池策略。
+
+    候选池确定后继续调⽤ LoadbalancerUtils.getForExchange，RoundRobin、Random 和 Hash 只
+
+负责从当前分区选择具体实例。处理 specify-domain 和标签过滤时创建候选列表或副本，不修改缓
+
+存中的共享 Upstream 对象。
+
+    DefaultRetryStrategy 不直接依赖 Divide 决策组件。Failover 时重新获取最新健康节点，读取
+
+effectivePartition，排除已失败实例后仍在同⼀分区负载均衡；若⾸次发⽣ Canary 到 Stable 的回退，
+
+则后续重试继续使⽤ Stable。分别为 CURRENT 和 FAILOVER 两种策略增加分区⼀致性测试。
+
+3.2.5 Admin 动态同步与可观测性
+
+    Rule 侧 继 续 使 ⽤ rule.handle 保 存 Canary 配 置 ， 经 RuleDTO.handle 、 RuleDO.handle 、
+
+RuleEventPublisher 和现有同步通道下发为 RuleData.handle，再由 DividePluginDataHandler 更新⽹
+
+关 缓 存 。 Upstream Labels 保 存 在 discovery_upstream.props ， 经 DiscoveryUpstreamData 、
+
+DiscoverySyncData 和 DivideUpstreamDataHandler 写⼊ Upstream.metadata。
+
+    Admin 和 Dashboard 增加字段校验、编辑与回显，保存时合并原 Props，避免覆盖未知扩展字
+
+段。先保证配置可正确保存、同步和回读，再完善交互式表单。更新后通过多⽹关热更新测试验
+
+证 Rule 与 Labels ⽆需重启即可⽣效。
+
+    Divide 只把 selectorId、ruleId、desiredPartition、effectivePartition 和 fallbackReason 等有限上
+
+下⽂写⼊ exchange。MetricsPlugin 在请求结束时结合最终 HTTP 状态上报分区请求量、回退次数和
+
+分区请求耗时。指标使⽤固定枚举，不记录⽤户 ID、请求 ID、Sticky Key、Header、Cookie 或异常
+
+原⽂。
+
+3.2.6 测试、文档与项目交付
+
+    测试覆盖纯百分⽐灰度、确定性已知向量、0% 与 100%、Sticky Key 缺失、旧 gray、⾮法 JSON、
+
+标签热更新、空池回退与拒绝、specify-domain 不污染缓存以及 Failover 不跨分区。两个⽹关实例
+
+使⽤相同测试向量验证分区结果⼀致，不强制依赖重型多节点环境。
+
+
+
+
+                                           14
+   完成核⼼路径后，对 10、100 和 1000 个 Upstream 的标签过滤开销进⾏基准测试，并验证新增
+
+逻辑关闭时的性能基线。最后补充使⽤说明、旧 gray 迁移说明、与 PR #6317 的差异说明及项⽬总
+
+结，根据导师和社区反馈拆分或调整上游 PR。
+
+
+3.3 主要风险、性能瓶颈与应对
+
+        风险              等级                        应对措施
+
+    旧 gray ⾏为变化         ⾼     以 canary == null 为兼容分界，建⽴旧 JSON/Props 组合回归测试
+
+  Failover 重试跨分区        ⾼     ⾸次决策保存不可变 RouteContext；重试只过滤同分区实例
+
+  空池回退误⼊ Canary         ⾼     MVP 仅⽀持 STABLE/REJECT，不默认回退全部实例
+
+  Labels 动态更新不完整        中     更新 Weight、Gray、Labels、健康状态并测试运⾏期标签切换
+
+  Dashboard 丢失 Props    中     保存时合并原 Props，增加前后端 JSON 往返测试
+
+ 性能、指标基数与隐私             中     同步期解析 Labels；基准测试；指标只⽤有限枚举且不记录⽤户值
+
+
+
+
+四、测试与验收⽅案
+
+4.1 测试⽤例设计
+
+4.1.1 正常路径与边界
+
+
+         o   覆盖 AND/OR/空条件、条件未命中，以及 Percentage 为 0%、10%、100% 的⾏为；
+
+             同⼀ Rule 与 Sticky Key 反复请求应得到相同分区。
+
+         o   覆盖 Header、Cookie、Query、IP 类型 Sticky Key，以及字段缺失、⾮法⽐例、异常
+
+             Props 等边界；明确降级结果并避免请求线程抛出未处理异常。
+
+         o   验证 Stable/Canary 多标签过滤、STABLE 与 REJECT 空池策略、specify-domain 优
+
+             先级，以及分区内 RoundRobin、Random、Hash 仍按原语义⼯作。
+
+         o   验证 Upstream Gray、Labels、Weight 和健康状态动态更新，⽆需重启⽹关即可⽣
+
+             效。
+
+
+4.1.2 兼容、重试与端到端
+
+
+         o   对旧 DivideRuleHandle JSON、旧 Upstream Props、存在或不存在 Gray 实例等组合
+
+             建⽴回归测试，确保 canary == null 时⾏为不变。
+
+
+
+                                     15
+        o    构建 Stable/Canary 两组模拟后端。Canary 实例失败后，Failover 必须留在 Canary；
+
+             空池时按配置回退 Stable 或返回 503。
+
+        o    验证 Dashboard 保存、回显和再次编辑时字段不丢失；指标能区分 Stable、Canary、
+
+             Error、Fallback，且不包含⽤户标识。
+
+        o    覆盖请求取消、异常、重试结束和⾼并发场景，确认 ServerWebExchange 上下⽂不
+
+             会泄漏或跨请求共享。
+
+
+4.1.3 验收目标
+
+
+        o    新版配置能够正常同步和执⾏，⽀持条件、固定⽐例、⽤户粘滞、标签分池与明确
+
+             的空池策略。
+
+        o    Divide 与 Failover 请求不跨分区，旧 Gray 配置保持兼容，Admin/Dashboard 可以
+
+             正确配置和回显。
+
+        o    核⼼路径具有可复现的单元、集成与 E2E 测试，三类 MVP 指标输出正确，使⽤与
+
+             迁移⽂档完整。
+
+        o    代码通过社区规范、CI 和上游评审；未达成项以测试证据和导师确认的调整记录
+
+             说明。
+
+
+4.2 性能与稳定性测试
+
+使⽤ JMH 或项⽬现有压测⽅式，对⽐关闭与启⽤ Canary 时的吞吐量、P95/P99 延迟和额外内存；
+
+分别测试 10、100、1000 个 Upstream 的标签过滤开销，验证 10% 分流分布和 Hash 稳定性。⽬标是
+
+新增逻辑不造成明显退化，并根据实测结果决定是否预分组缓存。
+
+
+
+五、开发计划
+
+   项⽬按 16 周推进，先确认配置和兼容语义，再完成核⼼路由、重试、管理端、指标和⽂档。
+
+预期交付配置模型、独⽴决策/分池组件、Divide 与重试改造、Dashboard ⽀持、指标、⾃动化测
+
+试和迁移说明，并拆分为多个可独⽴评审的上游 PR。
+
+
+
+
+                                   16
+       时间                  阶段                               ⼯作内容与可交付物
+
+                                         跑通 Divide/HTTP Client/同步链路；确认字段、⽐例、粘滞、回退
+     第 1–2 周             调研与设计
+                                         及兼容语义
+
+     第 3–5 周             配置与兼容           完成 CanaryConfig、JSON/Props、Labels 解析及旧 Gray 回归测试
+
+     第 6–8 周             决策与分池           完成条件匹配、固定 Hash、Stable/Canary 过滤和空池策略
+
+     第 9–11 周           主链路与重试           接⼊ Divide、RouteContext、Fallback 和 Failover 分区⼀致性
+
+ 第 12–14 周              管理端与指标           完成 Admin/Dashboard、Props ⽆损更新、指标和⽇志脱敏
+
+ 第 15–16 周               验证与交付           完成 E2E、性能、⽂档和项⽬总结；按社区评审修改并提交
+
+
+5.1 ⾥程碑判定
+
+      •   M1（第 2 周）：完成调⽤链调研、最⼩实验环境和技术设计评审，确认字段、⽐例、Sticky
+
+          Key、Fallback 与旧 Gray 的语义边界。
+
+      •   M2（第 8 周）：配置模型、兼容解析、Canary 决策器和 Upstream 分区组件完成，能够稳
+
+          定输出 Stable/Canary 并在对应实例池内路由。
+
+      •   M3（第 14 周）：Divide、Failover、Admin/Dashboard、指标和⽇志接⼊完成，动态更新
+
+          及重试不跨分区测试通过。
+
+      •   M4（第 16 周）：完成 E2E、性能测试、使⽤与迁移⽂档、项⽬总结，并根据导师和社区
+
+          评审修改后提交上游。
+
+
+
+六、参考资料
+
+1.    OSPP 2026 项⽬页——Apache ShenYu 灰度发布与流量分区能⼒增强：
+
+      https://summer.ospp.ac.cn/org/prodetail/2662f0084?list=org&navpage=org&lang=zh
+
+2.    Apache ShenYu 主仓库：https://github.com/apache/shenyu
+
+3.    Apache ShenYu Dashboard 仓库：https://github.com/apache/shenyu-dashboard
+
+4.    Apache ShenYu Divide Plugin 官⽅⽂档：https://shenyu.apache.org/zh/docs/2.7.0/plugin-
+
+      center/proxy/divide-plugin/
+
+5.    Apache ShenYu Issue #6071：https://github.com/apache/shenyu/issues/6071
+
+6.    Apache ShenYu PR #6317：https://github.com/apache/shenyu/pull/6317
+
+
+
+
+                                                17
+7.   DividePlugin 源码：https://github.com/apache/shenyu/blob/master/shenyu-plugin/shenyu-
+
+     plugin-divide/src/main/java/org/apache/shenyu/plugin/divide/DividePlugin.java
+
+8.   DefaultRetryStrategy 源码检索⼊⼜：
+
+     https://github.com/apache/shenyu/search?q=DefaultRetryStrategy&type=code
+
+9.   Prometheus 指标与标签命名最佳实践：https://prometheus.io/docs/practices/naming/
+
+申请声明
+
+本⼈将遵守 OSPP 活动规则与 Apache ShenYu 社区贡献规范，按⾥程碑同步进展，及时沟通需求范
+
+围、技术⽅案和实现风险。本申请书中的配置模型、类名、模块边界与 PR 拆分属于前期调研⽅案，
+
+最终实现以导师确认、社区讨论和上游代码评审为准；项⽬验收以可运⾏代码、可复现测试、兼
+
+容性证据、性能数据、使⽤⽂档和上游评审结果为主要依据。
+
+
+
+
+                                                18
+

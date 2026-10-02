@@ -1,0 +1,79 @@
+<mxfile host="Electron" agent="Codex">
+  <diagram id="tts-package-uml" name="TTS包-类关系图">
+    <mxGraphModel dx="1588" dy="974" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1040" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="package" parent="1" style="swimlane;startSize=40;horizontal=1;rounded=1;arcSize=6;container=1;pointerEvents=0;whiteSpace=wrap;html=1;fillColor=#eef6ff;swimlaneFillColor=#ffffff;strokeColor=#94a3b8;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=14;fontStyle=1;fontColor=#475569;" value="voice.tts" vertex="1">
+          <mxGeometry height="900" width="1500" x="50" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ttsService" parent="package" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;swimlaneFillColor=#ffffff;strokeColor=#82b366;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#365314;" value="&lt;b&gt;«interface» TtsService&lt;/b&gt;" vertex="1">
+          <mxGeometry height="140" width="330" x="90" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ttsServiceBody" parent="ttsService" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" value="职责：业务层文本转语音入口&#xa;&#xa;+ synthesize(text, callback)&#xa;+ synthesize(text, callback, observer)" vertex="1">
+          <mxGeometry height="104" width="330" y="36" as="geometry" />
+        </mxCell>
+        <mxCell id="ttsCallback" parent="package" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;swimlaneFillColor=#ffffff;strokeColor=#82b366;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#365314;" value="&lt;b&gt;«interface» TtsCallback&lt;/b&gt;" vertex="1">
+          <mxGeometry height="140" width="330" x="590" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ttsCallbackBody" parent="ttsCallback" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" value="职责：接收音频数据与任务终态&#xa;&#xa;+ onAudio(audio)&#xa;+ onComplete() / onError(error)" vertex="1">
+          <mxGeometry height="104" width="330" y="36" as="geometry" />
+        </mxCell>
+        <mxCell id="ttsClient" parent="package" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;swimlaneFillColor=#ffffff;strokeColor=#82b366;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#365314;" value="&lt;b&gt;«interface» TtsClient&lt;/b&gt;" vertex="1">
+          <mxGeometry height="140" width="330" x="1090" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ttsClientBody" parent="ttsClient" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" value="职责：单个供应商的统一调用契约&#xa;&#xa;+ provider()&#xa;+ synthesize(text, callback, target)" vertex="1">
+          <mxGeometry height="104" width="330" y="36" as="geometry" />
+        </mxCell>
+        <mxCell id="routing" parent="package" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;swimlaneFillColor=#ffffff;strokeColor=#2563eb;strokeWidth=3;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#1e3a5f;" value="&lt;b&gt;RoutingTtsService&lt;/b&gt;" vertex="1">
+          <mxGeometry height="220" width="390" x="60" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="routingBody" parent="routing" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" value="职责：健康过滤、首音频确认与 fallback&#xa;- selector / healthStore&#xa;- clientsByProvider: provider → TtsClient&#xa;&#xa;+ synthesize(..., observer: TtsTaskObserver)" vertex="1">
+          <mxGeometry height="184" width="390" y="36" as="geometry" />
+        </mxCell>
+        <mxCell id="bridge" parent="package" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;swimlaneFillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#1e3a5f;" value="&lt;b&gt;BinaryProbeStreamBridge&lt;/b&gt;" vertex="1">
+          <mxGeometry height="220" width="390" x="560" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="bridgeBody" parent="bridge" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" value="职责：探测首音频并缓存候选回调&#xa;- downstream: TtsCallback&#xa;- buffer / disposition&#xa;&#xa;~ awaitFirstAudio(...)&#xa;~ commit() / discard()" vertex="1">
+          <mxGeometry height="184" width="390" y="36" as="geometry" />
+        </mxCell>
+        <mxCell id="abstractClient" parent="package" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;swimlaneFillColor=#ffffff;strokeColor=#2563eb;strokeWidth=3;fontFamily=Microsoft YaHei;fontSize=14;fontStyle=1;fontColor=#1e3a5f;" value="&lt;b&gt;«abstract» AbstractWebSocketTtsClient&lt;/b&gt;" vertex="1">
+          <mxGeometry height="240" width="410" x="1050" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="abstractClientBody" parent="abstractClient" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" value="职责：WebSocket TTS 公共模板&#xa;- taskExecutor: WebSocketTaskExecutor&#xa;- 文本按 80 字分块并适配回调&#xa;&#xa;+ synthesize(text, callback, target)&#xa;# buildTaskParam(target)&#xa;# createConnection(target)" vertex="1">
+          <mxGeometry height="204" width="410" y="36" as="geometry" />
+        </mxCell>
+        <mxCell id="observer" parent="package" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;swimlaneFillColor=#ffffff;strokeColor=#82b366;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=14;fontStyle=1;fontColor=#365314;" value="&lt;b&gt;«interface» TtsTaskObserver&lt;/b&gt;" vertex="1">
+          <mxGeometry height="150" width="350" x="80" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="observerBody" parent="observer" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" value="职责：绑定供应商取消句柄并检查取消&#xa;&#xa;+ onTaskStarted(handle)&#xa;+ isCancelled()" vertex="1">
+          <mxGeometry height="114" width="350" y="36" as="geometry" />
+        </mxCell>
+        <mxCell id="bailian" parent="package" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;swimlaneFillColor=#ffffff;strokeColor=#d79b00;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#9a5b00;" value="&lt;b&gt;BaiLianTtsClient&lt;/b&gt;" vertex="1">
+          <mxGeometry height="180" width="370" x="1070" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="bailianBody" parent="bailian" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" value="职责：百炼 CosyVoice 协议适配&#xa;内部：BaiLianTtsTaskParam / BaiLianTtsConnection&#xa;输出：MP3 二进制字节&#xa;&#xa;+ provider()&#xa;# createConnection(target)" vertex="1">
+          <mxGeometry height="144" width="370" y="36" as="geometry" />
+        </mxCell>
+        <mxCell id="eRoutingService" edge="1" parent="package" source="routing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;strokeColor=#475569;strokeWidth=2;endArrow=block;endFill=0;dashed=1;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" target="ttsService" value="实现">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eBridgeCallback" edge="1" parent="package" source="bridge" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;strokeColor=#475569;strokeWidth=2;endArrow=block;endFill=0;dashed=1;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" target="ttsCallback" value="实现">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eAbstractClient" edge="1" parent="package" source="abstractClient" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;strokeColor=#475569;strokeWidth=2;endArrow=block;endFill=0;dashed=1;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" target="ttsClient" value="实现">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eBailianAbstract" edge="1" parent="package" source="bailian" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;strokeColor=#475569;strokeWidth=2;endArrow=block;endFill=0;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" target="abstractClient" value="继承">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eRoutingBridge" edge="1" parent="package" source="routing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#475569;strokeWidth=2;endArrow=open;endFill=0;dashed=1;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" target="bridge" value="«create»">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eRoutingObserver" edge="1" parent="package" source="routing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#475569;strokeWidth=2;endArrow=open;endFill=0;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" target="observer" value="绑定句柄 / 检查取消">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

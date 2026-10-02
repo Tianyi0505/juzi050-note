@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="Electron" agent="Codex" version="31.1.8">
+  <diagram id="websocket-package-uml" name="WebSocket包-类关系图">
+    <mxGraphModel dx="1600" dy="1040" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1040" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="&lt;b&gt;WebSocket 包 · 简易类 UML&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=24;fontStyle=1;fontColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="50" y="20" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="蓝色框：普通类　　粗蓝框：核心生命周期对象　　绿色框：辅助抽象 / 枚举　　实线箭头：使用 / 包装 / 控制　　虚线箭头：创建" style="text;html=1;align=right;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#64748b;" vertex="1" parent="1">
+          <mxGeometry x="470" y="25" width="1030" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="package" value="com.nageoffer.ai.ragent.infra.voice.websocket" style="swimlane;startSize=40;horizontal=1;rounded=1;arcSize=6;container=1;pointerEvents=0;whiteSpace=wrap;html=1;fillColor=#eef6ff;swimlaneFillColor=#ffffff;strokeColor=#94a3b8;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=14;fontStyle=1;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="50" y="80" width="1500" height="900" as="geometry" />
+        </mxCell>
+
+        <mxCell id="resourceLaneLabel" value="&lt;b&gt;连接资源线&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=15;fontColor=#475569;" vertex="1" parent="package">
+          <mxGeometry x="120" y="55" width="360" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="taskLaneLabel" value="&lt;b&gt;任务调度线&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=15;fontColor=#475569;" vertex="1" parent="package">
+          <mxGeometry x="1020" y="55" width="360" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="taskExecutor" value="&lt;b&gt;WebSocketTaskExecutor&lt;/b&gt;" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;swimlaneFillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#1e3a5f;" vertex="1" parent="package">
+          <mxGeometry x="1020" y="100" width="360" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="taskExecutorBody" value="职责：借用连接、启动任务并返回会话&#xa;- webSocketExecutor: WebSocketExecutor&#xa;&#xa;+ openTask(...)&#xa;+ close()" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" vertex="1" parent="taskExecutor">
+          <mxGeometry x="0" y="36" width="360" height="134" as="geometry" />
+        </mxCell>
+
+        <mxCell id="executor" value="&lt;b&gt;WebSocketExecutor&lt;/b&gt;" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;swimlaneFillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#1e3a5f;" vertex="1" parent="package">
+          <mxGeometry x="120" y="100" width="360" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="executorBody" value="职责：按 modelId 管理物理连接池&#xa;- poolsByModelId: modelId → 连接池&#xa;&#xa;+ acquire(target)&#xa;+ close()" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" vertex="1" parent="executor">
+          <mxGeometry x="0" y="36" width="360" height="144" as="geometry" />
+        </mxCell>
+
+        <mxCell id="taskSession" value="&lt;b&gt;WebSocketTaskSession&lt;/b&gt;" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;swimlaneFillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#1e3a5f;" vertex="1" parent="package">
+          <mxGeometry x="1020" y="360" width="360" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="taskSessionBody" value="职责：串行控制单任务并负责释放连接租约&#xa;- connection: VoiceConnection&#xa;- lease: WebSocketConnectionLease（生命周期）&#xa;&#xa;+ send(input)&#xa;+ finish()&#xa;+ cancel()" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" vertex="1" parent="taskSession">
+          <mxGeometry x="0" y="36" width="360" height="164" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lease" value="&lt;b&gt;WebSocketConnectionLease&lt;/b&gt;" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;swimlaneFillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#1e3a5f;" vertex="1" parent="package">
+          <mxGeometry x="120" y="370" width="360" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="leaseBody" value="职责：包装一次连接借用并决定归还/失效&#xa;- pool / connection&#xa;&#xa;+ connection()&#xa;+ invalidate()&#xa;+ close()" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" vertex="1" parent="lease">
+          <mxGeometry x="0" y="36" width="360" height="144" as="geometry" />
+        </mxCell>
+
+        <mxCell id="connection" value="&lt;b&gt;«abstract» VoiceConnection&lt;/b&gt;" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;swimlaneFillColor=#ffffff;strokeColor=#2563eb;strokeWidth=3;fontFamily=Microsoft YaHei;fontSize=15;fontStyle=1;fontColor=#1e3a5f;" vertex="1" parent="package">
+          <mxGeometry x="545" y="350" width="410" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="connectionBody" value="职责：维护物理 WebSocket 与单任务状态机&#xa;- state / currentTaskId / currentCallback&#xa;&#xa;+ connect() / startTask() / send()&#xa;+ finishTask() / cancelTask()&#xa;+ isReusable() / close()" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" vertex="1" parent="connection">
+          <mxGeometry x="0" y="36" width="410" height="184" as="geometry" />
+        </mxCell>
+
+        <mxCell id="state" value="&lt;b&gt;«enum» VoiceConnectionState&lt;/b&gt;" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;swimlaneFillColor=#ffffff;strokeColor=#82b366;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=14;fontStyle=1;fontColor=#365314;" vertex="1" parent="package">
+          <mxGeometry x="930" y="720" width="360" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="stateBody" value="CONNECTING / IDLE / TASK_STARTING / TASK_RUNNING&#xa;TASK_FINISHING / TASK_CANCELLING / BROKEN / CLOSED" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;" vertex="1" parent="state">
+          <mxGeometry x="0" y="36" width="360" height="74" as="geometry" />
+        </mxCell>
+
+        <mxCell id="callback" value="&lt;b&gt;«abstract» VoiceStreamCallback&lt;/b&gt;" style="swimlane;startSize=36;horizontal=1;rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;swimlaneFillColor=#ffffff;strokeColor=#82b366;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=14;fontStyle=1;fontColor=#365314;" vertex="1" parent="package">
+          <mxGeometry x="210" y="720" width="360" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="callbackBody" value="职责：过滤终态后的重复回调&#xa;+ onPacket() / onComplete() / onError()" style="text;html=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;whiteSpace=wrap;overflow=hidden;fontFamily=Microsoft YaHei;fontSize=13;fontColor=#334155;" vertex="1" parent="callback">
+          <mxGeometry x="0" y="36" width="360" height="74" as="geometry" />
+        </mxCell>
+
+        <mxCell id="eTaskExecutorSession" value="«create»" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#475569;strokeWidth=2;endArrow=open;endFill=0;dashed=1;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" edge="1" parent="package" source="taskExecutor" target="taskSession"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eExecutorLease" value="«create»" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#475569;strokeWidth=2;endArrow=open;endFill=0;dashed=1;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" edge="1" parent="package" source="executor" target="lease"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eSessionConnection" value="控制任务" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;strokeColor=#475569;strokeWidth=2;endArrow=open;endFill=0;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" edge="1" parent="package" source="taskSession" target="connection"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eLeaseConnection" value="包装连接" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#475569;strokeWidth=2;endArrow=open;endFill=0;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" edge="1" parent="package" source="lease" target="connection"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eConnectionState" value="维护状态" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;entryX=0.5;entryY=0;strokeColor=#475569;strokeWidth=2;endArrow=open;endFill=0;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" edge="1" parent="package" source="connection" target="state">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="853" y="650" /><mxPoint x="1110" y="650" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="eConnectionCallback" value="推送数据 / 终态" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;entryX=0.5;entryY=0;strokeColor=#475569;strokeWidth=2;endArrow=open;endFill=0;fontFamily=Microsoft YaHei;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" edge="1" parent="package" source="connection" target="callback">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="648" y="650" /><mxPoint x="390" y="650" /></Array></mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

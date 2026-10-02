@@ -1,0 +1,132 @@
+<mxfile host="Electron" agent="ChatGPT">
+  <diagram id="ws-connection-state-machine" name="WS连接池-单连接状态机">
+    <mxGraphModel dx="1148" dy="1010" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;" value="WS 连接池中一条物理连接的完整状态机" vertex="1">
+          <mxGeometry height="40" width="1000" x="300" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="start" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="770" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="new" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;fontStyle=1;" value="NEW&#xa;尚未建立 WebSocket" vertex="1">
+          <mxGeometry height="70" width="300" x="630" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="connecting" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=16;fontStyle=1;" value="CONNECTING&#xa;正在创建并等待连接就绪" vertex="1">
+          <mxGeometry height="80" width="300" x="630" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="idle" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=16;fontStyle=1;" value="IDLE&#xa;无任务，可被连接池借出&#xa;currentTaskId == null" vertex="1">
+          <mxGeometry height="90" width="300" x="630" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="taskStarting" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=16;fontStyle=1;" value="TASK_STARTING&#xa;已占用连接，正在发送 run-task&#xa;并等待 task-started" vertex="1">
+          <mxGeometry height="90" width="300" x="630" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="taskRunning" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=16;fontStyle=1;" value="TASK_RUNNING&#xa;当前 taskId 独占连接&#xa;可持续发送任务内容" vertex="1">
+          <mxGeometry height="90" width="300" x="630" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="taskFinishing" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#f8cecc;strokeColor=#b85450;fontSize=16;fontStyle=1;" value="TASK_FINISHING&#xa;已发送 finish/cancel&#xa;等待任务终态" vertex="1">
+          <mxGeometry height="90" width="300" x="630" y="840" as="geometry" />
+        </mxCell>
+        <mxCell id="broken" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#f8cecc;strokeColor=#b85450;fontSize=16;fontStyle=1;strokeWidth=2;" value="BROKEN&#xa;连接已不可复用&#xa;但资源尚未统一销毁" vertex="1">
+          <mxGeometry height="100" width="300" x="1080" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="closed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#e6e6e6;strokeColor=#666666;fontSize=16;fontStyle=1;strokeWidth=2;" value="CLOSED&#xa;物理 WebSocket 已关闭&#xa;任务和连接引用已清理" vertex="1">
+          <mxGeometry height="100" width="300" x="1080" y="850" as="geometry" />
+        </mxCell>
+        <mxCell id="poolBox" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=15;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;align=left;verticalAlign=top;spacing=12;" value="&lt;b&gt;连接池借还规则&lt;/b&gt;&lt;br&gt;&lt;br&gt;借出：borrowObject() 前执行 testOnBorrow&lt;br&gt;仅 IDLE 且 currentTaskId == null 可通过&lt;br&gt;&lt;br&gt;归还：lease.close()&lt;br&gt;• 仍为 IDLE → returnObject()&lt;br&gt;• 非 IDLE → invalidateObject() → destroyObject() → CLOSED" vertex="1">
+          <mxGeometry height="240" width="430" x="70" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="abnormalBox" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=15;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;align=left;verticalAlign=top;spacing=12;" value="&lt;b&gt;异常来源&lt;/b&gt;&lt;br&gt;&lt;br&gt;• 厂商主动 onClosed&lt;br&gt;• 网络 onFailure&lt;br&gt;• task-failed&lt;br&gt;• 协议解析异常&lt;br&gt;• 建连/启动/结束等待超时&lt;br&gt;&lt;br&gt;处理：markBroken() + callback.onError()" vertex="1">
+          <mxGeometry height="210" width="340" x="1060" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="closeNote" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=15;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;align=left;verticalAlign=top;spacing=12;" value="&lt;b&gt;主动关闭来源&lt;/b&gt;&lt;br&gt;&lt;br&gt;• WsExecutor / Spring 容器关闭&lt;br&gt;• maxIdle 超限淘汰&lt;br&gt;• invalidateObject 销毁&lt;br&gt;• 手动 close()&lt;br&gt;• 当前 TtsTask.cancel() 直接 close()" vertex="1">
+          <mxGeometry height="160" width="360" x="1050" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="eStart" edge="1" parent="1" source="start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="new">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eNewConnecting" edge="1" parent="1" source="new" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;fontSize=14;" target="connecting" value="connect()">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eConnectingIdle" edge="1" parent="1" source="connecting" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;fontSize=13;" target="idle" value="openWebSocket + awaitConnectionReady 成功">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eIdleStarting" edge="1" parent="1" source="idle" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;fontSize=14;" target="taskStarting" value="acquire() 后 startTask()">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eStartingRunning" edge="1" parent="1" source="taskStarting" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;fontSize=13;" target="taskRunning" value="run-task 成功 + 收到 task-started">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eRunningFinishing" edge="1" parent="1" source="taskRunning" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;fontSize=14;" target="taskFinishing" value="finishTask() / cancelTask()">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eFinishingIdle" edge="1" parent="1" source="taskFinishing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;fontSize=13;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="idle" value="收到 task-finished&#xa;clearTaskContext()">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="560" y="885" />
+              <mxPoint x="560" y="435" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eConnectingBroken" edge="1" parent="1" source="connecting" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#b85450;fontColor=#b85450;dashed=1;strokeWidth=2;fontSize=13;" target="broken" value="建连或初始化失败">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eStartingBroken" edge="1" parent="1" source="taskStarting" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#b85450;fontColor=#b85450;dashed=1;strokeWidth=2;fontSize=13;" target="broken" value="任务启动失败 / 超时">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eRunningBroken" edge="1" parent="1" source="taskRunning" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#b85450;fontColor=#b85450;dashed=1;strokeWidth=2;fontSize=13;" target="broken" value="onClosed / onFailure / task-failed / 协议异常">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eFinishingBroken" edge="1" parent="1" source="taskFinishing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#b85450;fontColor=#b85450;dashed=1;strokeWidth=2;fontSize=13;" target="broken" value="任务结束或取消失败 / 超时">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eIdleBroken" edge="1" parent="1" source="idle" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#b85450;fontColor=#b85450;dashed=1;strokeWidth=2;fontSize=13;" target="broken" value="空闲期间被厂商断开">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eBrokenClosed" edge="1" parent="1" source="broken" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;fontSize=13;" target="closed" value="lease.close()&#xa;invalidateObject → destroyObject → close()">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eIdleClosed" edge="1" parent="1" source="idle" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;fontSize=13;" target="closed" value="池关闭 / maxIdle 淘汰 / 手动 close()">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1010" y="435" />
+              <mxPoint x="1010" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eRunningClosed" edge="1" parent="1" source="taskRunning" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;fontSize=13;" target="closed" value="当前实现：TtsTask.cancel() 直接 connection.close()">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eAnyClose1" edge="1" parent="1" source="connecting" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1;dashed=1;fontSize=12;" target="closed" value="close()">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="970" y="290" />
+              <mxPoint x="970" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eAnyClose2" edge="1" parent="1" source="taskStarting" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1;dashed=1;fontSize=12;" target="closed" value="close()">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="980" y="585" />
+              <mxPoint x="980" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eAnyClose3" edge="1" parent="1" source="taskFinishing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1;dashed=1;fontSize=12;" target="closed" value="close()">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eClosedSelf" edge="1" parent="1" source="closed" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1;dashed=1;fontSize=12;loopDirection=1;" target="closed" value="重复 close()：幂等返回">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ePoolIdle" edge="1" parent="1" source="poolBox" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#666666;fontColor=#666666;fontSize=12;" target="idle" value="可借出 / 可归还">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eAbnormalBroken" edge="1" parent="1" source="abnormalBox" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#b85450;fontColor=#b85450;fontSize=12;" target="broken" value="统一进入">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

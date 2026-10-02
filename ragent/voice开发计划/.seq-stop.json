@@ -1,0 +1,28 @@
+{
+  "title": "TTS 停止 / 取消时序",
+  "participants": [
+    {"id": "web", "label": "Web / MSE", "actor": true},
+    {"id": "entry", "label": "Controller / PlaybackService"},
+    {"id": "manager", "label": "StreamTaskManager"},
+    {"id": "session", "label": "CancelHandle / TaskSession"},
+    {"id": "connection", "label": "VoiceConnection"},
+    {"id": "provider", "label": "百炼 CosyVoice"}
+  ],
+  "messages": [
+    {"from": "web", "to": "web", "label": "先关闭原播放 SSE；停止 Audio；清理 MSE"},
+    {"from": "web", "to": "entry", "label": "POST /rag/v3/voice/stop?taskId"},
+    {"from": "entry", "to": "manager", "label": "cancel(taskId)"},
+    {"from": "manager", "to": "manager", "label": "写 Redis 取消标记；发布 Topic 通知"},
+    {"from": "entry", "to": "web", "label": "HTTP 200", "return": true},
+    {"from": "manager", "to": "manager", "label": "Topic 通知 → cancelLocal(taskId)"},
+    {"from": "manager", "to": "session", "label": "cancelHandle.cancel() → session.cancel()"},
+    {"from": "session", "to": "session", "label": "lease.invalidate()"},
+    {"from": "session", "to": "connection", "label": "cancelTask(providerTaskId)"},
+    {"from": "connection", "to": "provider", "label": "finish-task（directive=cancel）"},
+    {"from": "provider", "to": "connection", "label": "取消终态", "async": true, "activate": false},
+    {"from": "connection", "to": "connection", "label": "状态 → BROKEN"},
+    {"from": "session", "to": "session", "label": "lease.close() → invalidateObject"},
+    {"from": "session", "to": "connection", "label": "连接池销毁：close()"},
+    {"from": "connection", "to": "connection", "label": "BROKEN → CLOSED"}
+  ]
+}

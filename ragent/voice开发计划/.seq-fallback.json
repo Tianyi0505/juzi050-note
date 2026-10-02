@@ -1,0 +1,29 @@
+{
+  "title": "TTS 候选模型与首帧 Probe / fallback 时序",
+  "participants": [
+    {"id": "routing", "label": "RoutingTtsService"},
+    {"id": "health", "label": "ModelSelector / HealthStore"},
+    {"id": "bridge", "label": "BinaryProbeStreamBridge"},
+    {"id": "ws", "label": "WebSocket TTS"},
+    {"id": "provider", "label": "候选模型 Provider"}
+  ],
+  "messages": [
+    {"from": "routing", "to": "health", "label": "selectTtsCandidates()"},
+    {"from": "health", "to": "routing", "label": "按优先级返回候选列表", "return": true},
+    {"from": "routing", "to": "health", "label": "allowCall(target)"},
+    {"from": "routing", "to": "routing", "label": "解析客户端；创建 ProbeBridge"},
+    {"from": "routing", "to": "ws", "label": "synthesize(text, bridge, target)"},
+    {"from": "ws", "to": "provider", "label": "run-task；continue-task × N；finish-task"},
+    {"from": "provider", "to": "ws", "label": "task-started", "async": true, "activate": false},
+    {"from": "ws", "to": "routing", "label": "返回 cancelHandle", "return": true},
+    {"from": "provider", "to": "ws", "label": "首帧 / 错误 / 无内容", "async": true, "activate": false},
+    {"from": "ws", "to": "bridge", "label": "onAudio / onError / onComplete", "async": true},
+    {"from": "bridge", "to": "routing", "label": "ProbeResult", "return": true},
+    {"from": "routing", "to": "health", "label": "markSuccess(target)"},
+    {"from": "routing", "to": "bridge", "label": "commit()；下发缓冲首帧"},
+    {"from": "routing", "to": "bridge", "label": "discard()"},
+    {"from": "routing", "to": "health", "label": "markFailure(target)"},
+    {"from": "routing", "to": "ws", "label": "cancelHandle.cancel()"},
+    {"from": "routing", "to": "health", "label": "releaseHalfOpenPermit()"}
+  ]
+}
