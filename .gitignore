@@ -20,3 +20,14 @@ CLAUDE.local.md
 /面经
 /面试
 /个人任务
+
+# 学习通脚本 —— 私密凭据与运行时状态（含账号密码/cookie，切勿提交）
+学习通脚本/.env
+学习通脚本/cookies.json
+学习通脚本/monitor.log
+学习通脚本/state.json
+学习通脚本/seen.json
+学习通脚本/__pycache__/
+
+# WorkBuddy 本地状态目录
+.workbuddy/
