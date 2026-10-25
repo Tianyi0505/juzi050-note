@@ -12,9 +12,10 @@
 | 服务地址 | `http://localhost:8080` |
 | 请求格式 | `application/json`。UTF-8 编码。 |
 | 时间格式 | RFC3339。例如 `2026-10-25T19:54:22+08:00`。时区为北京时间。 |
-| 登录凭证 | 登录接口返回 `token`。后续请求放在请求头 `Authorization: Bearer <token>`。 |
-| 兼容写法 | 也接受请求头 `token: <token>`。 |
-| 凭证有效期 | 7 天。过期后重新登录。 |
+| 登录凭证 | 登录接口下发 `session_id` Cookie。属性为 HttpOnly、SameSite=Lax。 |
+| 会话存储 | 会话数据存 Redis。键名 `campus:sess:<session_id>`。值为用户编号。 |
+| 会话有效期 | 2 小时。每次请求自动续期。 |
+| 前端要求 | 浏览器自动携带 Cookie。跨域请求必须带 `credentials: 'include'`。 |
 | HTTP 状态码 | 固定 `200`。业务结果看响应体的 `code`。 |
 
 ### 1.1 响应结构
@@ -33,7 +34,7 @@
 | --- | --- | --- |
 | `200` | 成功 | 读取 `data`。 |
 | `400` | 参数错误或业务校验失败 | 显示 `msg`。 |
-| `401` | 未登录，或 token 失效 | 跳转登录页。 |
+| `401` | 未登录，或会话失效 | 跳转登录页。 |
 | `403` | 角色无权限，或账号被禁用 | 显示 `msg`。 |
 | `404` | 数据不存在 | 显示 `msg`。 |
 | `500` | 服务端异常 | 提示稍后重试。 |
@@ -109,6 +110,27 @@
 | 39 | GET | `/api/ping` | 健康检查 | 公开 |
 
 说明：表中「工作人员」包含管理员。「登录」表示任意已登录用户。
+
+### 1.5 前端接入示例
+
+浏览器自动携带 Cookie。前端只需要打开凭证选项。
+
+```javascript
+// 登录
+await fetch('http://localhost:8080/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({ phone: '13800000002', password: '123456' })
+})
+
+// 后续请求
+await fetch('http://localhost:8080/api/my/parcels', {
+  credentials: 'include'
+})
+```
+
+前后端同域部署时，`credentials` 可以省略。
 
 ## 2. 数据结构
 
@@ -256,7 +278,6 @@
   "code": 200,
   "msg": "success",
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "user": {
       "id": 5, "phone": "13800000009", "name": "王五", "role": "USER",
       "stationId": null, "status": 1, "createTime": "2026-10-25T19:54:22+08:00"
@@ -299,8 +320,8 @@
 `POST /api/auth/logout`
 需要登录。
 
-JWT 无状态。服务端不保存会话。前端删除本地 token。
-接口固定返回成功。
+服务端删除 Redis 中的会话，并清除 Cookie。
+旧 Cookie 立即失效。
 
 ### 4.4 查看当前用户
 
@@ -344,7 +365,7 @@ JWT 无状态。服务端不保存会话。前端删除本地 token。
 
 错误：`400 原密码不正确`、`400 密码不能小于 6`。
 
-修改成功后旧 token 仍然有效。旧 token 到期后失效。
+修改成功后服务端删除当前会话，并清除 Cookie。用户必须重新登录。
 
 ## 5. 用户管理
 
@@ -827,15 +848,15 @@ JWT 无状态。服务端不保存会话。前端删除本地 token。
 ### 10.3 跨域
 
 系统开启 CORS。允许任意来源。
-允许请求头 `Content-Type`、`Authorization`、`token`。
+允许请求头 `Content-Type`。允许携带 Cookie（`AllowCredentials`）。
 允许方法 `GET`、`POST`、`PUT`、`DELETE`、`OPTIONS`。
 
 ## 11. 常见错误汇总
 
 | 提示 | 原因 | 处理 |
 | --- | --- | --- |
-| `未登录或登录已过期` | 没带 token，或 token 过期 | 重新登录。 |
-| `用户不存在` | token 对应用户已删除 | 重新登录。 |
+| `未登录或登录已失效` | 没带 Cookie，或会话已过期、已被删除 | 重新登录。 |
+| `用户不存在` | 会话对应的用户已删除 | 重新登录。 |
 | `账号已被禁用` | 管理员禁用了账号 | 联系管理员。 |
 | `仅管理员可操作` | 角色不是 `ADMIN` | 用管理员账号。 |
 | `仅驿站工作人员可操作` | 角色是 `USER` | 用工作人员账号。 |

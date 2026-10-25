@@ -48,7 +48,8 @@
 | Web 框架 | Gin | v1.10 |
 | ORM | GORM | v1.25 |
 | 数据库 | MySQL | 8.0 |
-| 登录凭证 | JWT（golang-jwt/jwt） | v5 |
+| 缓存 | Redis（存登录会话） | 7.x |
+| 登录态 | Cookie + Redis 会话（go-redis） | v9.7 |
 | 密码加密 | bcrypt（golang.org/x/crypto） | 最新 |
 | 参数校验 | validator（Gin 内置） | v10 |
 | 跨域 | gin-contrib/cors | v1.7 |
@@ -64,10 +65,12 @@ backend/
 │   └── campus_express.sql       # 建库、建表、初始数据。
 └── internal/
     ├── db/db.go                 # 连接数据库。
+    ├── cache/redis.go           # 连接 Redis。
     ├── model/model.go           # 实体定义、状态常量、状态判断。
+    ├── session/session.go       # 会话读写：创建、校验、续期、销毁。
     ├── router/router.go         # 注册路由、开启跨域。
     └── handler/
-        ├── common.go            # 统一响应、JWT 中间件、参数校验、工具函数。
+        ├── common.go            # 统一响应、会话中间件、参数校验、工具函数。
         ├── auth.go              # 注册、登录、个人中心。
         ├── user.go              # 用户管理。
         ├── station.go           # 驿站管理。
@@ -90,7 +93,24 @@ docker exec -i helloworld-mysql mysql -uroot -proot --default-character-set=utf8
 脚本重建 `campus_express` 库。
 脚本写入 2 个驿站、4 个账号、4 条包裹、1 条取件记录、2 条公告。
 
-### 6.2 启动后端
+### 6.2 准备 Redis
+
+Redis 用来存登录会话。
+本机 6379 端口已被占用时，用下面的命令启动独立容器。容器端口映射到 6380。
+
+```powershell
+docker run -d --name campus-redis -p 127.0.0.1:6380:6379 redis:7-alpine
+```
+
+容器启动后，启动后端时把地址传给程序：
+
+```powershell
+$env:REDIS_ADDR = "127.0.0.1:6380"
+```
+
+如果 Redis 在 6379 且没有密码，可以跳过这一步。程序默认连接 `127.0.0.1:6379`。
+
+### 6.3 启动后端
 
 1. 进入 `backend` 目录。
 2. 运行 `go run .`。
@@ -103,7 +123,7 @@ go run .
 服务监听 `http://localhost:8080`。
 默认连接 `root/root@127.0.0.1:3306/campus_express`。
 
-### 6.3 验证启动
+### 6.4 验证启动
 
 运行下面的命令。返回 `pong` 表示启动成功。
 
@@ -111,16 +131,18 @@ go run .
 curl http://localhost:8080/api/ping
 ```
 
-### 6.4 登录并调用接口
+### 6.5 登录并调用接口
 
-1. 调用登录接口。记下返回的 `token`。
-2. 在请求头加入 `Authorization: Bearer <token>`。
-3. 调用其他接口。
+1. 调用登录接口。服务端返回 `session_id` Cookie。
+2. 用同一个 Cookie 文件调用其他接口。
 
 ```powershell
-curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d "{\"phone\":\"13800000001\",\"password\":\"123456\"}"
-curl http://localhost:8080/api/stats/overview -H "Authorization: Bearer <token>"
+curl -X POST http://localhost:8080/api/auth/login -c cookie.txt -H "Content-Type: application/json" -d "{\"phone\":\"13800000001\",\"password\":\"123456\"}"
+curl http://localhost:8080/api/stats/overview -b cookie.txt
 ```
+
+浏览器前端不需要手动处理 Cookie。
+前端请求必须带 `credentials: 'include'`。写法见 [[api]] 第 1 节。
 
 ## 7. 账号
 
@@ -142,7 +164,9 @@ curl http://localhost:8080/api/stats/overview -H "Authorization: Bearer <token>"
 | `MYSQL_USER` | `root` | 数据库账号。 |
 | `MYSQL_PASSWORD` | `root` | 数据库密码。 |
 | `MYSQL_DB` | `campus_express` | 数据库名。 |
-| `JWT_SECRET` | `campus-express-demo-secret` | 签名密钥。上线必须修改。 |
+| `REDIS_ADDR` | `127.0.0.1:6379` | Redis 地址。 |
+| `REDIS_PASSWORD` | 空 | Redis 密码。没有密码时留空。 |
+| `REDIS_DB` | `0` | Redis 库号。 |
 | `PORT` | `8080` | 服务端口。 |
 
 ## 9. 功能清单
@@ -150,7 +174,7 @@ curl http://localhost:8080/api/stats/overview -H "Authorization: Bearer <token>"
 | 模块 | 功能 | 角色 |
 | --- | --- | --- |
 | 注册登录 | 学生注册。手机号加密码登录。 | 公开 |
-| 登录凭证 | 登录返回 JWT。有效期 7 天。 | 公开 |
+| 登录态 | 登录成功下发 `session_id` Cookie。会话存 Redis。有效期 2 小时。每次请求续期。 | 公开 |
 | 个人中心 | 查看资料、修改资料、修改密码。 | 全部 |
 | 用户管理 | 查询、新增、修改、启停、重置密码、删除。 | 管理员 |
 | 驿站管理 | 查询、新增、修改、删除。 | 管理员 |
@@ -280,9 +304,9 @@ stateDiagram-v2
 
 | 编号 | 用例 | 预期 | 结果 |
 | --- | --- | --- | --- |
-| T01 | 管理员登录。 | 返回 token。 | 通过 |
+| T01 | 管理员登录。 | 下发 `session_id` Cookie。 | 通过 |
 | T02 | 密码错误。 | `400 密码错误`。 | 通过 |
-| T03 | 不带 token 查用户列表。 | `401 未登录或登录已过期`。 | 通过 |
+| T03 | 不带 Cookie 查用户列表。 | `401 未登录或登录已失效`。 | 通过 |
 | T04 | 学生查用户列表。 | `403 仅管理员可操作`。 | 通过 |
 | T05 | 重复注册。 | `400 该手机号已注册`。 | 通过 |
 | T06 | 工作人员入库。 | 返回 6 位取件码，状态为 0。 | 通过 |
@@ -321,10 +345,27 @@ stateDiagram-v2
 
 新增用例共 27 条断言，全部通过。
 
+### 15.3 会话用例
+
+| 编号 | 用例 | 预期 | 结果 |
+| --- | --- | --- | --- |
+| S01 | 管理员登录。 | 下发 `session_id` Cookie。HttpOnly。有效期 7200 秒。 | 通过 |
+| S02 | 携带 Cookie 访问受保护接口。 | 返回数据。 | 通过 |
+| S03 | 不带 Cookie。 | `401 未登录或登录已失效`。 | 通过 |
+| S04 | 伪造 Cookie。 | `401 未登录或登录已失效`。 | 通过 |
+| S05 | 退出登录后再用旧 Cookie。 | `401 未登录或登录已失效`。 | 通过 |
+| S06 | 学生 Cookie 访问用户管理。 | `403 仅管理员可操作`。 | 通过 |
+| S07 | 账号被禁用后用旧 Cookie。 | `403 账号已被禁用`。 | 通过 |
+| S08 | 修改密码后用旧 Cookie。 | `401 未登录或登录已失效`。 | 通过 |
+
+会话用例共 25 条断言，全部通过。
+
 ## 16. 说明与限制
 
 1. 鉴权只做登录校验和角色判断。系统不做细粒度权限控制。
 2. 密码用 bcrypt 存储。接口不返回密码字段。
-3. JWT 有效期 7 天。退出登录由前端删除 token 完成。
-4. 取件通知用服务端日志模拟。系统不接短信网关。
-5. 测试脚本用 Python 编写，不放进仓库。
+3. 会话有效期 2 小时。每次请求自动续期。
+4. 退出登录时服务端删除 Redis 会话，并清除 Cookie。
+5. 修改密码后当前会话立即失效，用户需要重新登录。
+6. 取件通知用服务端日志模拟。系统不接短信网关。
+7. 测试脚本用 Python 编写，不放进仓库。
