@@ -39,6 +39,14 @@ func CreateParcel(c *gin.Context) {
 		return
 	}
 
+	// 同一运单号不能重复入库，避免学生看到两条一样的包裹
+	var exists model.Parcel
+	if err := db.DB.Where("tracking_no = ? AND status <> ?", req.TrackingNo, model.ParcelReturned).
+		Order("id DESC").First(&exists).Error; err == nil {
+		Fail(c, 400, "该运单号已入库，取件码为 "+exists.PickupCode)
+		return
+	}
+
 	p := model.Parcel{
 		TrackingNo:    req.TrackingNo,
 		Company:       req.Company,
@@ -61,6 +69,7 @@ func CreateParcel(c *gin.Context) {
 	log.Printf("【取件通知】%s 的包裹 %s 已到达「%s」，取件码 %s",
 		p.ReceiverPhone, p.TrackingNo, station.Name, p.PickupCode)
 
+	p.StationName = station.Name
 	OK(c, p)
 }
 
@@ -76,6 +85,22 @@ func uniquePickupCode() string {
 		}
 	}
 	return randCode()
+}
+
+// fillStationNames 给列表补上驿站名称，避免前端为每条记录再查一次驿站
+func fillStationNames(list []model.Parcel) {
+	if len(list) == 0 {
+		return
+	}
+	var stations []model.Station
+	db.DB.Find(&stations)
+	names := make(map[uint]string, len(stations))
+	for _, s := range stations {
+		names[s.ID] = s.Name
+	}
+	for i := range list {
+		list[i].StationName = names[list[i].StationID]
+	}
 }
 
 // validParcelStatus 校验状态取值
@@ -127,6 +152,7 @@ func ListParcels(c *gin.Context) {
 	q.Count(&total)
 	var list []model.Parcel
 	q.Order("id DESC").Offset((page - 1) * size).Limit(size).Find(&list)
+	fillStationNames(list)
 	OK(c, pageData(total, list))
 }
 
@@ -140,6 +166,10 @@ func GetParcel(c *gin.Context) {
 	if err := db.DB.First(&p, id).Error; err != nil {
 		Fail(c, 404, "包裹不存在")
 		return
+	}
+	var station model.Station
+	if db.DB.First(&station, p.StationID).Error == nil {
+		p.StationName = station.Name
 	}
 	OK(c, p)
 }
@@ -201,6 +231,10 @@ func UpdateParcel(c *gin.Context) {
 		Fail(c, 500, "保存失败")
 		return
 	}
+	var station model.Station
+	if db.DB.First(&station, p.StationID).Error == nil {
+		p.StationName = station.Name
+	}
 	OK(c, p)
 }
 
@@ -236,6 +270,7 @@ func MyParcels(c *gin.Context) {
 	q.Count(&total)
 	var list []model.Parcel
 	q.Order("id DESC").Offset((page - 1) * size).Limit(size).Find(&list)
+	fillStationNames(list)
 	OK(c, pageData(total, list))
 }
 

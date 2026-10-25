@@ -76,6 +76,9 @@ type Parcel struct {
 	PickupTime    *time.Time `json:"pickupTime"`
 	OperatorID    uint       `json:"operatorId"`
 	Remark        string     `gorm:"size:200" json:"remark"`
+
+	// 以下字段不落库，查询时补上，方便前端直接展示
+	StationName string `gorm:"-" json:"stationName"`
 }
 
 func (Parcel) TableName() string { return "parcel" }

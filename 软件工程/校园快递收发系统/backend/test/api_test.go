@@ -387,6 +387,17 @@ func TestParcelInbound(t *testing.T) {
 		student.expect("POST", "/api/parcels",
 			gin.H{"trackingNo": "V006", "receiverPhone": studentPhone, "stationId": 1}, 403, "仅驿站工作人员可操作")
 	})
+
+	t.Run("T40 重复运单号不能重复入库", func(t *testing.T) {
+		staff.sub(t)
+		tracking := "D" + suffix()
+		first := obj(staff.ok("POST", "/api/parcels", gin.H{
+			"trackingNo": tracking, "receiverPhone": studentPhone, "stationId": 1,
+		}))
+		staff.expect("POST", "/api/parcels", gin.H{
+			"trackingNo": tracking, "receiverPhone": studentPhone, "stationId": 1,
+		}, 400, "该运单号已入库，取件码为 "+str(first["pickupCode"]))
+	})
 }
 
 // ---------------------------------------------------------------- 模块三：包裹查询
@@ -466,6 +477,17 @@ func TestParcelQuery(t *testing.T) {
 		student.sub(t)
 		staff.sub(t)
 		staff.expect("GET", "/api/pickup/000000", nil, 404, "取件码无效")
+	})
+
+	t.Run("T41 列表返回驿站名称", func(t *testing.T) {
+		staff.sub(t)
+		list := pageList(staff.ok("GET", "/api/parcels?keyword="+tracking, nil))
+		if len(list) == 0 {
+			t.Fatal("查询结果为空")
+		}
+		if name := str(list[0].(map[string]any)["stationName"]); name == "" {
+			t.Fatal("列表缺少 stationName，前端无法直接展示驿站")
+		}
 	})
 }
 
@@ -784,3 +806,4 @@ func TestNoticeAndStats(t *testing.T) {
 		}
 	})
 }
+
