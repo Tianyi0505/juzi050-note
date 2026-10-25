@@ -63,6 +63,8 @@ backend/
 ├── .gitignore
 ├── db/
 │   └── campus_express.sql       # 建库、建表、初始数据。
+├── test/
+│   └── api_test.go              # 接口自动化测试，60 条用例。
 └── internal/
     ├── db/db.go                 # 连接数据库。
     ├── cache/redis.go           # 连接 Redis。
@@ -292,9 +294,9 @@ stateDiagram-v2
 | 业务流程分析图 | 第 11 节 状态流转。 |
 | 总体结构设计、模块结构图 | 第 5 节 目录结构。 |
 | 数据库设计、表结构 | 第 10 节、`db/campus_express.sql`。 |
-| 详细设计、程序流程图 | `internal/handler/parcel.go` 的入库与核销函数。 |
+| 详细设计、程序流程图 | `设计图/` 图 3 与图 4。代码见 `internal/handler/parcel.go`。 |
 | 系统实现、源码 | `backend/` 全部文件。 |
-| 系统测试、测试用例 | 第 15 节 测试记录。 |
+| 系统测试、测试用例 | [[测试用例]] 与 `backend/test/api_test.go`。 |
 
 ## 15. 测试记录
 
@@ -359,6 +361,32 @@ stateDiagram-v2
 | S08 | 修改密码后用旧 Cookie。 | `401 未登录或登录已失效`。 | 通过 |
 
 会话用例共 25 条断言，全部通过。
+
+### 15.4 自动化测试
+
+全部用例写成 Go 测试，编号见 [[测试用例]]。
+运行方式：
+
+```powershell
+cd backend
+$env:REDIS_ADDR = "127.0.0.1:6380"
+go test ./test/ -v
+```
+
+测试会自己创建数据，并在结束时清理。运行前先导入 `db/campus_express.sql`。
+
+```text
+--- PASS: TestAuth (0.80s)
+--- PASS: TestParcelInbound (1.12s)
+--- PASS: TestParcelQuery (0.55s)
+--- PASS: TestPickup (1.30s)
+--- PASS: TestStation (0.21s)
+--- PASS: TestUser (0.57s)
+--- PASS: TestNoticeAndStats (0.33s)
+ok   campus-express/test  6.4s
+```
+
+共 60 条用例，全部通过。
 
 ## 16. 说明与限制
 
