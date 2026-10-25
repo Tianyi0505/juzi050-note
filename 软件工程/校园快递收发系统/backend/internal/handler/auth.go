@@ -3,6 +3,7 @@ package handler
 import (
 	"campus-express/internal/db"
 	"campus-express/internal/model"
+	"campus-express/internal/session"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,8 +37,13 @@ func Register(c *gin.Context) {
 		Fail(c, 500, "注册失败："+err.Error())
 		return
 	}
-	token, _ := genToken(u.ID)
-	OK(c, gin.H{"token": token, "user": u})
+	sid, err := session.Create(u.ID)
+	if err != nil {
+		Fail(c, 500, "注册失败：创建会话失败")
+		return
+	}
+	setSessionCookie(c, sid)
+	OK(c, gin.H{"user": u})
 }
 
 // Login 登录
@@ -64,16 +70,21 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	token, err := genToken(u.ID)
+	sid, err := session.Create(u.ID)
 	if err != nil {
-		Fail(c, 500, "登录失败")
+		Fail(c, 500, "登录失败：创建会话失败")
 		return
 	}
-	OK(c, gin.H{"token": token, "user": u})
+	setSessionCookie(c, sid)
+	OK(c, gin.H{"user": u})
 }
 
-// Logout JWT 无状态，前端丢弃 token 即可，这里只做接口占位
+// Logout 退出登录：删除 Redis 会话并清除 Cookie
 func Logout(c *gin.Context) {
+	if sid := CurrentSession(c); sid != "" {
+		session.Destroy(sid)
+	}
+	clearSessionCookie(c)
 	OK(c, nil)
 }
 
@@ -127,5 +138,10 @@ func UpdateMyPassword(c *gin.Context) {
 	}
 	u.Password = hashPassword(req.NewPassword)
 	db.DB.Save(u)
+	// 改密后让当前会话失效，要求重新登录
+	if sid := CurrentSession(c); sid != "" {
+		session.Destroy(sid)
+	}
+	clearSessionCookie(c)
 	OK(c, nil)
 }

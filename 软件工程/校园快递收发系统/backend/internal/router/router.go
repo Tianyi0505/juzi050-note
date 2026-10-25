@@ -13,10 +13,12 @@ import (
 func Setup() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery(), cors.New(cors.Config{
-		AllowAllOrigins: true,
-		AllowHeaders:    []string{"Content-Type", "Authorization", "token"},
-		AllowMethods:    []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		MaxAge:          12 * time.Hour,
+		// 会话放在 Cookie 里，必须允许携带凭证，因此不能使用 AllowAllOrigins
+		AllowOriginFunc:  func(origin string) bool { return true },
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
 	}))
 
 	// 不需要登录的接口

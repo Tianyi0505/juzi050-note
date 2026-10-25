@@ -8,17 +8,16 @@ import (
 	"log"
 	"math/big"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"campus-express/internal/db"
 	"campus-express/internal/model"
+	"campus-express/internal/session"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -40,46 +39,40 @@ func Fail(c *gin.Context, code int, msg string) {
 }
 
 // ---------------------------------------------------------------
-// 登录态：JWT，请求头 Authorization: Bearer <token>
+// 登录态：Cookie 存 session_id，会话数据存 Redis
 // ---------------------------------------------------------------
 
-var jwtSecret = []byte(envOr("JWT_SECRET", "campus-express-demo-secret"))
-
-const tokenExpire = 7 * 24 * time.Hour
-
-// genToken 签发 JWT
-func genToken(uid uint) (string, error) {
-	claims := jwt.MapClaims{
-		"uid": uid,
-		"exp": time.Now().Add(tokenExpire).Unix(),
-	}
-	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(jwtSecret)
+// setSessionCookie 写入会话 Cookie
+func setSessionCookie(c *gin.Context, sid string) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(session.CookieName, sid, int(session.TTL.Seconds()), "/", "", false, true)
 }
 
-// Auth 登录校验中间件
+// clearSessionCookie 清除会话 Cookie
+func clearSessionCookie(c *gin.Context) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(session.CookieName, "", -1, "/", "", false, true)
+}
+
+// Auth 登录校验中间件：读 Cookie，查 Redis，续期
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		claims := jwt.MapClaims{}
-		_, err := jwt.ParseWithClaims(bearerToken(c), claims, func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("签名算法不匹配")
-			}
-			return jwtSecret, nil
-		})
-		if err != nil {
-			Fail(c, 401, "未登录或登录已过期")
+		sid, err := c.Cookie(session.CookieName)
+		if err != nil || sid == "" {
+			Fail(c, 401, "未登录或登录已失效")
 			c.Abort()
 			return
 		}
-		uid, ok := claims["uid"].(float64)
+		uid, ok := session.UserID(sid)
 		if !ok {
-			Fail(c, 401, "登录信息有误")
+			Fail(c, 401, "未登录或登录已失效")
 			c.Abort()
 			return
 		}
 
 		var u model.User
-		if err := db.DB.First(&u, uint(uid)).Error; err != nil {
+		if err := db.DB.First(&u, uid).Error; err != nil {
+			session.Destroy(sid)
 			Fail(c, 401, "用户不存在")
 			c.Abort()
 			return
@@ -89,18 +82,19 @@ func Auth() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		session.Refresh(sid) // 每次请求续期
 		c.Set("user", &u)
+		c.Set("sessionId", sid)
 		c.Next()
 	}
 }
 
-// bearerToken 兼容 Authorization: Bearer xxx 和 token: xxx 两种写法
-func bearerToken(c *gin.Context) string {
-	h := c.GetHeader("Authorization")
-	if strings.HasPrefix(h, "Bearer ") {
-		return strings.TrimPrefix(h, "Bearer ")
-	}
-	return c.GetHeader("token")
+// CurrentSession 取当前会话 id
+func CurrentSession(c *gin.Context) string {
+	v, _ := c.Get("sessionId")
+	s, _ := v.(string)
+	return s
 }
 
 // CurrentUser 取当前登录用户
@@ -206,13 +200,6 @@ func hashPassword(pwd string) string {
 // checkPassword bcrypt 校验
 func checkPassword(hash, pwd string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(pwd)) == nil
-}
-
-func envOr(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
 }
 
 // pageParams 取分页参数，默认第 1 页、每页 10 条

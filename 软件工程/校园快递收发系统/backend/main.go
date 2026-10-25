@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"campus-express/internal/cache"
 	"campus-express/internal/db"
 	"campus-express/internal/model"
 	"campus-express/internal/router"
@@ -12,6 +13,7 @@ import (
 
 func main() {
 	db.Init()
+	cache.Init()
 	go expireJob()
 
 	port := os.Getenv("PORT")
