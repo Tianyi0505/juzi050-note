@@ -154,19 +154,20 @@ await fetch('http://localhost:8080/api/my/parcels', {
 | `2` | 超期 | 橙色（#EA580C） |
 | `3` | 已退回 | 灰色（#6B7280） |
 
-快递公司 `company` 使用下面的固定写法。入库下拉选项与统计口径都按这张表。
-后端按原文存储，前端提交时不要改字。
+快递公司用 `companyCode` 传，不传中文，接口与数据库里只出现 code。中文名由后端按本表映射后放在出参 `company` 里，前端直接展示，不需要自己维护一份字典。
 
-| 快递公司 |
-| --- |
-| 顺丰速运 |
-| 京东物流 |
-| 中通快递 |
-| 圆通速递 |
-| 申通快递 |
-| 韵达快递 |
-| 极兔速递 |
-| 邮政EMS |
+| `companyCode` | `company`（出参） |
+| --- | --- |
+| `SF` | 顺丰速运 |
+| `JD` | 京东物流 |
+| `ZTO` | 中通快递 |
+| `YTO` | 圆通速递 |
+| `STO` | 申通快递 |
+| `YD` | 韵达快递 |
+| `JTSD` | 极兔速递 |
+| `EMS` | 邮政EMS |
+
+传本表以外的值一律 `400`。`parcel` 表只存 `company_code`，不做中文快照：公司改名后所有历史单据一起变，统计口径也只按 code 聚合，不会因为写成“顺丰”还是“顺丰速运”被拆成两组。
 
 ## 2. 数据结构
 
@@ -204,7 +205,8 @@ await fetch('http://localhost:8080/api/my/parcels', {
 | --- | --- | --- |
 | `id` | int | 主键。 |
 | `trackingNo` | string | 运单号。 |
-| `company` | string | 快递公司。 |
+| `companyCode` | string | 快递公司 code，取值见上表。 |
+| `company` | string | 快递公司中文名。查询接口按 code 映射后补上，不存库。 |
 | `receiverName` | string | 收件人姓名。 |
 | `receiverPhone` | string | 收件人手机号。 |
 | `stationId` | int | 存放驿站。 |
@@ -256,7 +258,7 @@ await fetch('http://localhost:8080/api/my/parcels', {
 | 角色 | `USER`、`STAFF`、`ADMIN` 三选一。 |
 | 用户状态 | `0` 或 `1`。 |
 | 运单号 | 必填。最多 50 字。 |
-| 快递公司 | 最多 30 字。 |
+| 快递公司 | 必须是公司 code 表里的值。 |
 | 货架号 | 最多 20 字。 |
 | 备注 | 最多 200 字。 |
 | 驿站名称 | 必填。最多 50 字。 |
@@ -555,7 +557,7 @@ await fetch('http://localhost:8080/api/my/parcels', {
 | `receiverPhone` | string | 是 | 11 位数字 | 收件人手机号。 |
 | `stationId` | int | 是 | 驿站必须存在且营业 | 存放驿站。 |
 | `receiverName` | string | 否 | 最多 20 字 | 收件人姓名。 |
-| `company` | string | 否 | 最多 30 字 | 快递公司。 |
+| `companyCode` | string | 否 | 见公司 code 表 | 快递公司，如 `SF`。 |
 | `shelfCode` | string | 否 | 最多 20 字 | 货架号。 |
 | `remark` | string | 否 | 最多 200 字 | 备注。 |
 
@@ -568,7 +570,7 @@ await fetch('http://localhost:8080/api/my/parcels', {
 ```json
 // 响应 data
 {
-  "id": 5, "trackingNo": "SF9988776655", "company": "顺丰速运",
+  "id": 5, "trackingNo": "SF9988776655", "companyCode": "SF", "company": "顺丰速运",
   "receiverName": "张三", "receiverPhone": "13800000002", "stationId": 1,
   "shelfCode": "C-05", "pickupCode": "709615", "status": 0,
   "inboundTime": "2026-10-25T19:54:22+08:00", "pickupTime": null,
@@ -587,6 +589,7 @@ await fetch('http://localhost:8080/api/my/parcels', {
 | 驿站已停用 | `400 该驿站已停用，不能入库` |
 | 学生调用 | `403 仅驿站工作人员可操作` |
 | 运单号重复 | `400 该运单号已入库，取件码为 709615` |
+| 公司 code 非法 | `400 快递公司只能是 SF、JD、ZTO、YTO、STO、YD、JTSD、EMS 之一` |
 
 ### 7.2 包裹分页查询
 
@@ -599,7 +602,7 @@ await fetch('http://localhost:8080/api/my/parcels', {
 | `size` | int | 否 | — | 每页条数。 |
 | `status` | int | 否 | `0` 到 `3` | 包裹状态。 |
 | `stationId` | int | 否 | — | 按驿站过滤。 |
-| `company` | string | 否 | — | 按快递公司过滤。 |
+| `companyCode` | string | 否 | 见公司 code 表 | 按快递公司过滤。传 `company`（中文名）也兼容，后端翻成 code。 |
 | `phone` | string | 否 | — | 收件人手机号。精确匹配。 |
 | `keyword` | string | 否 | — | 运单号、收件人、手机号、取件码。模糊匹配。 |
 | `startTime` | string | 否 | `yyyy-MM-dd` | 入库开始日期。 |
@@ -622,7 +625,7 @@ await fetch('http://localhost:8080/api/my/parcels', {
 
 | 参数 | 类型 | 必填 | 规则 | 说明 |
 | --- | --- | --- | --- | --- |
-| `company` | string | 否 | 最多 30 字 | 快递公司。 |
+| `companyCode` | string | 否 | 见公司 code 表 | 快递公司。 |
 | `receiverName` | string | 否 | 最多 20 字 | 收件人姓名。 |
 | `receiverPhone` | string | 否 | 11 位数字 | 收件人手机号。 |
 | `stationId` | int | 否 | 驿站必须存在 | 存放驿站。 |
@@ -635,6 +638,7 @@ await fetch('http://localhost:8080/api/my/parcels', {
 | --- | --- |
 | 包裹已取件或已退回 | `400 已取件或已退回的包裹不能修改` |
 | 驿站不存在 | `400 驿站不存在` |
+| 公司 code 非法 | `400 快递公司只能是 SF、JD、ZTO、YTO、STO、YD、JTSD、EMS 之一` |
 
 ### 7.5 删除包裹
 
@@ -832,10 +836,10 @@ await fetch('http://localhost:8080/api/my/parcels', {
   "code": 200,
   "msg": "success",
   "data": [
-    { "name": "顺丰速运", "num": 2 },
-    { "name": "中通快递", "num": 2 },
-    { "name": "圆通速递", "num": 1 },
-    { "name": "京东物流", "num": 1 }
+    { "code": "SF",  "name": "顺丰速运", "num": 2 },
+    { "code": "ZTO", "name": "中通快递", "num": 2 },
+    { "code": "YTO", "name": "圆通速递", "num": 1 },
+    { "code": "JD",  "name": "京东物流", "num": 1 }
   ]
 }
 ```

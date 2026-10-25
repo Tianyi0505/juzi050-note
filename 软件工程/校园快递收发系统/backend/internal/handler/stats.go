@@ -48,15 +48,30 @@ func Overview(c *gin.Context) {
 	})
 }
 
+// companyNum 公司分布：code + 中文名 + 数量
+type companyNum struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
+	Num  int64  `json:"num"`
+}
+
 // CompanyStats 各快递公司包裹量
 func CompanyStats(c *gin.Context) {
 	if !RequireStaff(c) {
 		return
 	}
-	var rows []nameNum
+	var rows []companyNum
 	db.DB.Model(&model.Parcel{}).
-		Select("company AS name, COUNT(*) AS num").
-		Group("company").Order("num DESC").Scan(&rows)
+		Select("company_code AS code, COUNT(*) AS num").
+		Group("company_code").Order("num DESC").Scan(&rows)
+	// 库里只存 code，中文名在这里统一映射，统计口径天然对齐
+	for i := range rows {
+		if rows[i].Code == "" {
+			rows[i].Name = "未填写"
+			continue
+		}
+		rows[i].Name = model.CompanyName(rows[i].Code)
+	}
 	OK(c, rows)
 }
 

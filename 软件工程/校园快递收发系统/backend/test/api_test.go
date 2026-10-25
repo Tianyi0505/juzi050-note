@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -189,8 +190,12 @@ func login(t *testing.T, phone string) *client {
 	return c
 }
 
+// 自增序号，避免连续调用拿到同一纳秒导致运单号重复
+var seq int64
+
 func suffix() string {
-	return fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
+	n := time.Now().UnixNano() + atomic.AddInt64(&seq, 1)
+	return fmt.Sprintf("%06d", n%1000000)
 }
 
 // 造一条包裹，返回 id 与取件码
@@ -198,13 +203,17 @@ func newParcel(t *testing.T, staff *client, stationID int) (int, string) {
 	t.Helper()
 	out := staff.ok("POST", "/api/parcels", gin.H{
 		"trackingNo":    "T" + suffix(),
-		"company":       "顺丰速运",
+		"companyCode":   "SF",
 		"receiverName":  "自动化测试",
 		"receiverPhone": studentPhone,
 		"stationId":     stationID,
 		"shelfCode":     "Z-01",
 	})
 	d := obj(out)
+	// 入库传 code，出参要带回中文名，前端才能直接展示
+	if name := str(d["company"]); name != "顺丰速运" {
+		t.Fatalf("快递公司中文名映射失败：%q", name)
+	}
 	return num(d["id"]), str(d["pickupCode"])
 }
 
@@ -328,6 +337,15 @@ func TestParcelInbound(t *testing.T) {
 		t.Cleanup(func() { staff.call("POST", fmt.Sprintf("/api/parcels/%d/return", id), nil) })
 	})
 
+	t.Run("T42 快递公司 code 非法", func(t *testing.T) {
+		student.sub(t)
+		staff.sub(t)
+		staff.expect("POST", "/api/parcels", gin.H{
+			"trackingNo": "X" + suffix(), "companyCode": "SFX", "receiverPhone": studentPhone,
+			"stationId": 1, "shelfCode": "Z-01",
+		}, 400, "快递公司只能是")
+	})
+
 	t.Run("T08 连续入库取件码不重复", func(t *testing.T) {
 		student.sub(t)
 		staff.sub(t)
@@ -408,7 +426,7 @@ func TestParcelQuery(t *testing.T) {
 
 	tracking := "Q" + suffix()
 	staff.ok("POST", "/api/parcels", gin.H{
-		"trackingNo": tracking, "company": "圆通速递", "receiverName": "查询测试",
+		"trackingNo": tracking, "companyCode": "YTO", "receiverName": "查询测试",
 		"receiverPhone": studentPhone, "stationId": 1, "shelfCode": "Q-01",
 	})
 

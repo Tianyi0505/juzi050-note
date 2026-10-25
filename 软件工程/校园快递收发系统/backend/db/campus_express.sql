@@ -49,7 +49,7 @@ CREATE TABLE station (
 CREATE TABLE parcel (
   id             BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
   tracking_no    VARCHAR(50)  NOT NULL COMMENT '快递运单号',
-  company        VARCHAR(30)  DEFAULT NULL COMMENT '快递公司',
+  company_code   VARCHAR(10)  DEFAULT NULL COMMENT '快递公司 code：SF 顺丰/JD 京东/ZTO 中通/YTO 圆通/STO 申通/YD 韵达/JTSD 极兔/EMS 邮政',
   receiver_name  VARCHAR(50)  DEFAULT NULL COMMENT '收件人姓名',
   receiver_phone VARCHAR(20)  NOT NULL COMMENT '收件人手机号',
   station_id     BIGINT       DEFAULT NULL COMMENT '存放驿站',
@@ -63,7 +63,8 @@ CREATE TABLE parcel (
   PRIMARY KEY (id),
   KEY idx_parcel_phone (receiver_phone),
   KEY idx_parcel_code (pickup_code),
-  KEY idx_parcel_status (status)
+  KEY idx_parcel_status (status),
+  KEY idx_parcel_company (company_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='包裹表';
 
 -- -------------------------------------------------------------
@@ -110,11 +111,11 @@ INSERT INTO sys_user (id, phone, password, name, role, station_id, status) VALUE
 (3, '13800000002', '$2a$10$fCkfrqyRSMRa6Vec.Zdfw.OkoZVsODz9m8k5a8G5YFSiR6V93hW9O', '张三', 'USER', NULL, 1),
 (4, '13800000003', '$2a$10$fCkfrqyRSMRa6Vec.Zdfw.OkoZVsODz9m8k5a8G5YFSiR6V93hW9O', '李四', 'USER', NULL, 1);
 
-INSERT INTO parcel (id, tracking_no, company, receiver_name, receiver_phone, station_id, shelf_code, pickup_code, status, inbound_time, pickup_time, operator_id, remark) VALUES
-(1, 'SF1234567890', '顺丰速运', '张三', '13800000002', 1, 'A-01', '318026', 0, NOW(), NULL, 2, '文件袋'),
-(2, 'YT9876543210', '圆通速递', '李四', '13800000003', 1, 'A-02', '540917', 0, NOW(), NULL, 2, NULL),
-(3, 'JD5555666677', '京东物流', '张三', '13800000002', 2, 'B-03', '702614', 1, NOW(), NOW(), 2, '已本人取件'),
-(4, 'ZT1111222233', '中通快递', '李四', '13800000003', 2, 'B-04', '265083', 2, DATE_SUB(NOW(), INTERVAL 5 DAY), NULL, 2, '超期未取');
+INSERT INTO parcel (id, tracking_no, company_code, receiver_name, receiver_phone, station_id, shelf_code, pickup_code, status, inbound_time, pickup_time, operator_id, remark) VALUES
+(1, 'SF1234567890', 'SF', '张三', '13800000002', 1, 'A-01', '318026', 0, NOW(), NULL, 2, '文件袋'),
+(2, 'YT9876543210', 'YTO', '李四', '13800000003', 1, 'A-02', '540917', 0, NOW(), NULL, 2, NULL),
+(3, 'JD5555666677', 'JD', '张三', '13800000002', 2, 'B-03', '702614', 1, NOW(), NOW(), 2, '已本人取件'),
+(4, 'ZT1111222233', 'ZTO', '李四', '13800000003', 2, 'B-04', '265083', 2, DATE_SUB(NOW(), INTERVAL 5 DAY), NULL, 2, '超期未取');
 
 INSERT INTO pickup_record (parcel_id, tracking_no, pickup_code, receiver_phone, pickup_type, picker_name, operator_id, pickup_time, remark) VALUES
 (3, 'JD5555666677', '702614', '13800000002', 1, '张三', 2, NOW(), '本人取件');

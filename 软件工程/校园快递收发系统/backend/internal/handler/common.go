@@ -131,7 +131,7 @@ var fieldNames = map[string]string{
 	"Phone": "手机号", "Password": "密码", "OldPassword": "原密码", "NewPassword": "新密码",
 	"Name": "姓名", "Role": "角色", "StationID": "驿站", "Status": "状态",
 	"Title": "标题", "Content": "内容",
-	"TrackingNo": "运单号", "Company": "快递公司", "ReceiverName": "收件人姓名",
+	"TrackingNo": "运单号", "CompanyCode": "快递公司", "ReceiverName": "收件人姓名",
 	"ReceiverPhone": "收件人手机号", "ShelfCode": "货架号", "Remark": "备注",
 	"PickupCode": "取件码", "PickerName": "取件人", "PickupType": "取件方式",
 	"StationName": "驿站名称", "Address": "地址", "Manager": "负责人", "OpenTime": "营业开始时间", "CloseTime": "营业结束时间",

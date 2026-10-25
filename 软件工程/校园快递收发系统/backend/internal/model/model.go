@@ -32,6 +32,57 @@ func CanEdit(status int) bool {
 	return status == ParcelPending || status == ParcelExpired
 }
 
+// 快递公司：接口只传 code，库里也只存 code，中文名由后端实时映射
+const (
+	CompanySF   = "SF"   // 顺丰速运
+	CompanyJD   = "JD"   // 京东物流
+	CompanyZTO  = "ZTO"  // 中通快递
+	CompanyYTO  = "YTO"  // 圆通速递
+	CompanySTO  = "STO"  // 申通快递
+	CompanyYD   = "YD"   // 韵达快递
+	CompanyJTSD = "JTSD" // 极兔速递
+	CompanyEMS  = "EMS"  // 邮政EMS
+)
+
+// companyNames code -> 中文名，唯一的一份字典
+var companyNames = map[string]string{
+	CompanySF:   "顺丰速运",
+	CompanyJD:   "京东物流",
+	CompanyZTO:  "中通快递",
+	CompanyYTO:  "圆通速递",
+	CompanySTO:  "申通快递",
+	CompanyYD:   "韵达快递",
+	CompanyJTSD: "极兔速递",
+	CompanyEMS:  "邮政EMS",
+}
+
+// CompanyCodes 有序的 code 列表，供校验提示与前端下拉使用
+var CompanyCodes = []string{CompanySF, CompanyJD, CompanyZTO, CompanyYTO, CompanySTO, CompanyYD, CompanyJTSD, CompanyEMS}
+
+// ValidCompanyCode 判断是否为已知的快递公司 code
+func ValidCompanyCode(code string) bool {
+	_, ok := companyNames[code]
+	return ok
+}
+
+// CompanyName code -> 中文名；未知 code 原样返回，避免展示成空白
+func CompanyName(code string) string {
+	if name, ok := companyNames[code]; ok {
+		return name
+	}
+	return code
+}
+
+// CompanyCodeOf 中文名 -> code，用于兼容按公司名筛选的旧调用
+func CompanyCodeOf(name string) string {
+	for code, n := range companyNames {
+		if n == name {
+			return code
+		}
+	}
+	return name
+}
+
 // User 用户表：学生 / 驿站工作人员 / 管理员
 type User struct {
 	ID         uint      `gorm:"primaryKey" json:"id"`
@@ -65,7 +116,7 @@ func (Station) TableName() string { return "station" }
 type Parcel struct {
 	ID            uint       `gorm:"primaryKey" json:"id"`
 	TrackingNo    string     `gorm:"size:50;not null" json:"trackingNo"`
-	Company       string     `gorm:"size:30" json:"company"`
+	CompanyCode   string     `gorm:"size:10;index" json:"companyCode"`
 	ReceiverName  string     `gorm:"size:50" json:"receiverName"`
 	ReceiverPhone string     `gorm:"size:20;not null;index" json:"receiverPhone"`
 	StationID     uint       `json:"stationId"`
@@ -79,6 +130,7 @@ type Parcel struct {
 
 	// 以下字段不落库，查询时补上，方便前端直接展示
 	StationName string `gorm:"-" json:"stationName"`
+	Company     string `gorm:"-" json:"company"` // 由 companyCode 实时映射，库里不存
 }
 
 func (Parcel) TableName() string { return "parcel" }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"strings"
 	"time"
 
 	"campus-express/internal/db"
@@ -17,7 +18,7 @@ func CreateParcel(c *gin.Context) {
 	}
 	var req struct {
 		TrackingNo    string `json:"trackingNo" binding:"required,max=50"`
-		Company       string `json:"company" binding:"max=30"`
+		CompanyCode   string `json:"companyCode" binding:"max=10"`
 		ReceiverName  string `json:"receiverName" binding:"max=20"`
 		ReceiverPhone string `json:"receiverPhone" binding:"required,len=11,numeric"`
 		StationID     uint   `json:"stationId" binding:"required"`
@@ -25,6 +26,11 @@ func CreateParcel(c *gin.Context) {
 		Remark        string `json:"remark" binding:"max=200"`
 	}
 	if !BindJSON(c, &req) {
+		return
+	}
+	// 快递公司传 code，不传中文：白名单校验后再落库，避免"顺丰""顺丰速运"这类脏数据
+	if req.CompanyCode != "" && !model.ValidCompanyCode(req.CompanyCode) {
+		Fail(c, 400, "快递公司只能是 "+strings.Join(model.CompanyCodes, "、")+" 之一")
 		return
 	}
 
@@ -49,7 +55,7 @@ func CreateParcel(c *gin.Context) {
 
 	p := model.Parcel{
 		TrackingNo:    req.TrackingNo,
-		Company:       req.Company,
+		CompanyCode:   req.CompanyCode,
 		ReceiverName:  req.ReceiverName,
 		ReceiverPhone: req.ReceiverPhone,
 		StationID:     req.StationID,
@@ -70,6 +76,7 @@ func CreateParcel(c *gin.Context) {
 		p.ReceiverPhone, p.TrackingNo, station.Name, p.PickupCode)
 
 	p.StationName = station.Name
+	p.Company = model.CompanyName(p.CompanyCode)
 	OK(c, p)
 }
 
@@ -100,6 +107,16 @@ func fillStationNames(list []model.Parcel) {
 	}
 	for i := range list {
 		list[i].StationName = names[list[i].StationID]
+		list[i].Company = model.CompanyName(list[i].CompanyCode)
+	}
+}
+
+// decorateParcel 补齐单条包裹不落库的展示字段：公司中文名 + 驿站名称
+func decorateParcel(p *model.Parcel) {
+	p.Company = model.CompanyName(p.CompanyCode)
+	var station model.Station
+	if db.DB.First(&station, p.StationID).Error == nil {
+		p.StationName = station.Name
 	}
 }
 
@@ -126,8 +143,15 @@ func ListParcels(c *gin.Context) {
 	if v := c.Query("stationId"); v != "" {
 		q = q.Where("station_id = ?", v)
 	}
-	if v := c.Query("company"); v != "" {
-		q = q.Where("company = ?", v)
+	if v := c.Query("companyCode"); v != "" {
+		if !model.ValidCompanyCode(v) {
+			Fail(c, 400, "快递公司只能是 "+strings.Join(model.CompanyCodes, "、")+" 之一")
+			return
+		}
+		q = q.Where("company_code = ?", v)
+	} else if v := c.Query("company"); v != "" {
+		// 兼容旧参数：允许直接传中文公司名，后端翻成 code 再查
+		q = q.Where("company_code = ?", model.CompanyCodeOf(v))
 	}
 	if v := c.Query("phone"); v != "" {
 		q = q.Where("receiver_phone = ?", v)
@@ -167,10 +191,7 @@ func GetParcel(c *gin.Context) {
 		Fail(c, 404, "包裹不存在")
 		return
 	}
-	var station model.Station
-	if db.DB.First(&station, p.StationID).Error == nil {
-		p.StationName = station.Name
-	}
+	decorateParcel(&p)
 	OK(c, p)
 }
 
@@ -195,7 +216,7 @@ func UpdateParcel(c *gin.Context) {
 	}
 
 	var req struct {
-		Company       string `json:"company" binding:"max=30"`
+		CompanyCode   string `json:"companyCode" binding:"max=10"`
 		ReceiverName  string `json:"receiverName" binding:"max=20"`
 		ReceiverPhone string `json:"receiverPhone" binding:"omitempty,len=11,numeric"`
 		StationID     uint   `json:"stationId"`
@@ -205,13 +226,17 @@ func UpdateParcel(c *gin.Context) {
 	if !BindJSON(c, &req) {
 		return
 	}
+	if req.CompanyCode != "" && !model.ValidCompanyCode(req.CompanyCode) {
+		Fail(c, 400, "快递公司只能是 "+strings.Join(model.CompanyCodes, "、")+" 之一")
+		return
+	}
 	if req.StationID > 0 && !stationExists(req.StationID) {
 		Fail(c, 400, "驿站不存在")
 		return
 	}
 
-	if req.Company != "" {
-		p.Company = req.Company
+	if req.CompanyCode != "" {
+		p.CompanyCode = req.CompanyCode
 	}
 	if req.ReceiverName != "" {
 		p.ReceiverName = req.ReceiverName
@@ -231,10 +256,7 @@ func UpdateParcel(c *gin.Context) {
 		Fail(c, 500, "保存失败")
 		return
 	}
-	var station model.Station
-	if db.DB.First(&station, p.StationID).Error == nil {
-		p.StationName = station.Name
-	}
+	decorateParcel(&p)
 	OK(c, p)
 }
 
@@ -287,6 +309,7 @@ func ParcelByCode(c *gin.Context) {
 		Fail(c, 404, "取件码无效或该包裹已取走")
 		return
 	}
+	decorateParcel(&p)
 	OK(c, p)
 }
 
@@ -421,6 +444,7 @@ func ReturnParcel(c *gin.Context) {
 		Fail(c, 500, "保存失败")
 		return
 	}
+	decorateParcel(&p)
 	OK(c, p)
 }
 
