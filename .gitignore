@@ -27,6 +27,8 @@ CLAUDE.local.md
 学习通脚本/monitor.log
 学习通脚本/state.json
 学习通脚本/seen.json
+学习通脚本/keepalive.json
+学习通脚本/monitor.pid
 学习通脚本/__pycache__/
 
 # WorkBuddy 本地状态目录

@@ -1,0 +1,22 @@
+{
+  "login_url": "https://passport2.chaoxing.com/fanyalogin",
+  "transfer_key": "u2oh6Vu^HWe4_AES",
+  "jwt_refresh_buffer_days": 1,
+  "new_notice_api": "https://notice.chaoxing.com/pc/notice/getNewNotices",
+  "inbox_list_api": "https://notice.chaoxing.com/pc/notice/getNoticeList",
+  "referer": "https://notice.chaoxing.com/pc/notice/myNotice?s=dec7882dc7220feb28d1773ce5b68880",
+  "match_mode": "both",
+  "exclude_reminders": true,
+  "check_keyword": "",
+  "only_unread": false,
+  "refresh_interval": 30,
+  "max_open_per_cycle": 5,
+  "year": "auto",
+  "keepalive_enabled": true,
+  "keepalive_interval": 60,
+  "keepalive_max_hours": 12,
+  "keepalive_max_fail": 5,
+  "keepalive_carry_answers": true,
+  "request_body_template": "type=2&notice_type=&lastValue=&sort=&folderUUID=&kw=&startTime=&endTime=&gKw=&gName=&year={YEAR}&tag=&fidsCode=&queryFolderNoticePrevYear=0&filterSenderPuids=&filterTags=",
+  "headless": false
+}
