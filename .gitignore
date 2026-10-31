@@ -33,3 +33,7 @@ CLAUDE.local.md
 
 # WorkBuddy 本地状态目录
 .workbuddy/
+
+# 系统与压缩包
+.DS_Store
+编译原理/*.zip
