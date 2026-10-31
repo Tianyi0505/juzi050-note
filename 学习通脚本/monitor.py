@@ -25,7 +25,7 @@
   4. uuid 去重（seen.json）作为兜底，防止同一通知被重复打开。
 
 会话维护（自动登录）：
-  - 私密凭据（account / password / cookie）统一放在「学习通脚本/.env」，不进 config.json，避免提交泄露。
+  - 私密凭据（account / password / cookie）与个人信息统一放在「个人任务/.env」，不进 config.json，避免提交泄露。
   - 每次请求前检查 p_auth_token 的 JWT 过期时间；若距过期不足 jwt_refresh_buffer_days 天，先自动登录刷新。
   - 若某次 API 返回“未登录/会话失效”，自动登录一次并重试。
   - 登录：用 TransferKey 对账号密码做 AES-CBC 加密（IV=key），POST passport2.chaoxing.com/fanyalogin，
@@ -58,7 +58,7 @@
 依赖：仅 Python 标准库（urllib / json / webbrowser / time / os / signal / datetime / base64 / re）。
 
 重要：
-  - 私密凭据（账号密码、cookie）已统一移到「学习通脚本/.env」，并被 .gitignore 忽略，请勿提交到 git、勿泄露。
+  - 私密凭据（账号密码、cookie）已统一移到「个人任务/.env」，并被 .gitignore 忽略，请勿提交到 git、勿泄露。
     config.json 仅保留非私密的运行参数。
 """
 
@@ -93,23 +93,31 @@ IDLE_KEEP = 20
 # .env 加载（账号密码/cookie 等私密凭据统一放 .env，不进 config.json，避免提交泄露）
 # --------------------------------------------------------------------------
 def load_env():
-    """读取 BASE_DIR/.env，返回 {KEY: VALUE}。OS 环境变量优先于文件内容。"""
+    """读取 .env，返回 {KEY: VALUE}。
+
+    查找顺序：BASE_DIR/.env（本目录，优先级高）→ 个人任务/.env（vault 根目录，隐私信息统一存放处）。
+    OS 环境变量优先于文件内容。
+    """
     env = {}
-    p = os.path.join(BASE_DIR, ".env")
-    try:
-        with open(p, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
-                k, v = line.split("=", 1)
-                k = k.strip()
-                v = v.strip()
-                if len(v) >= 2 and v[0] == v[-1] and v[0] in ("'", '"'):
-                    v = v[1:-1]
-                env[k] = v
-    except FileNotFoundError:
-        pass
+    paths = [
+        os.path.join(BASE_DIR, ".env"),
+        os.path.join(os.path.dirname(BASE_DIR), "个人任务", ".env"),
+    ]
+    for path in paths:
+        try:
+            with open(path, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip()
+                    if len(v) >= 2 and v[0] == v[-1] and v[0] in ("'", '"'):
+                        v = v[1:-1]
+                    env.setdefault(k, v)   # 先读到的优先，后面的文件只补缺
+        except FileNotFoundError:
+            continue
     # OS 环境变量优先（便于 CI / 临时覆盖）
     for k in list(env):
         if k in os.environ:
@@ -430,7 +438,7 @@ def do_login(cfg):
     uname = (cfg.get("account") or "").strip()
     pwd = cfg.get("password") or ""
     if not uname or not pwd:
-        log("⚠️ 学习通脚本/.env 缺少 CHAO_XING_ACCOUNT / CHAO_XING_PASSWORD，无法自动登录。"
+        log("⚠️ 个人任务/.env 缺少 CHAO_XING_ACCOUNT / CHAO_XING_PASSWORD，无法自动登录。"
             "请补充账号密码，或在 .env 填入 CHAO_XING_COOKIE。")
         return None
     key = (cfg.get("transfer_key") or DEFAULT_TRANSFER_KEY).encode("utf-8")
