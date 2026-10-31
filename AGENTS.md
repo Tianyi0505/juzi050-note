@@ -13,6 +13,7 @@
   - **填充版**放到 `/个人任务/` 下对应的子目录，按老师/单位要求的规则命名（如 `24051220张昌豪.PDF`）。
 - 个人信息**只从 `个人任务/.env` 读取**，不要向用户重复询问，也不要在别处再抄一份：
   - `SCHOOL`（学校）、`COLLEGE`（学院）、`MAJOR_CLASS`（专业班级）、`STUDENT_ID`（学号）、`STUDENT_NAME`（姓名）、`ADVISOR`（指导教师）
+  - 指导教师按课程不同，用 `ADVISOR_<课程>` 覆盖（如 `ADVISOR_SOFTWARE`），未指定时回退到 `ADVISOR`；填表前先确认是哪门课
   - 该文件与整个 `/个人任务/` 已被 `.gitignore` 忽略，禁止提交。
 - 仓库内不得出现个人信息：正文、注释、`.gitignore` 注释、PDF 元数据、文件名、commit message 均不允许；也不要在公开部分说明“个人版存放在本地”这类信息。
 - 学习通脚本的凭据也放在同一个 `个人任务/.env`（`CHAO_XING_ACCOUNT` / `CHAO_XING_PASSWORD` / `CHAO_XING_COOKIE`），`学习通脚本/monitor.py` 会按「脚本目录 .env → 个人任务/.env」的顺序回退读取。
