@@ -4,34 +4,23 @@
 <meta charset="utf-8">
 <title>项目1 预备实验 实验报告</title>
 <style>
-  @page {
-    size: A4;
-    margin: 22mm 19mm 20mm 19mm;
-  }
+  @page { size: A4; margin: 22mm 19mm 20mm 19mm; }
   * { box-sizing: border-box; }
   html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body {
     margin: 0;
     font-family: "Source Han Serif SC", "Noto Serif CJK SC", "SimSun", "宋体", serif;
     font-size: 10.5pt;
-    line-height: 1.72;
+    line-height: 1.68;
     color: #1b1b1b;
     text-align: left;
     orphans: 3;
     widows: 3;
   }
-  p { margin: 0 0 0.55em 0; text-indent: 2em; }
+  p { margin: 0 0 0.5em 0; text-indent: 2em; }
   p.noindent { text-indent: 0; }
 
-  /* ---------- 封面 ---------- */
-  .cover {
-    height: 245mm;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    page-break-after: always;
-    padding-top: 8mm;
-  }
+  .cover { height: 245mm; display: flex; flex-direction: column; align-items: center; page-break-after: always; padding-top: 8mm; }
   .cover .school { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; font-size: 17pt; letter-spacing: 4px; color: #1f4e79; }
   .cover .college { font-family: "Microsoft YaHei", sans-serif; font-size: 12pt; letter-spacing: 3px; color: #444; margin-top: 4mm; }
   .cover .rule { width: 62mm; height: 3px; background: #1f4e79; margin: 9mm 0; }
@@ -44,180 +33,71 @@
   .cover .meta td { border: none; padding: 2px 0; font-size: 11pt; }
   .cover .meta td.k { width: 22mm; text-align: right; padding-right: 4mm; color: #333; font-family: "Microsoft YaHei", sans-serif; }
   .cover .meta td.v { width: 68mm; border-bottom: 1px solid #999; }
+  .cover .meta tr:nth-child(odd) td, .cover .meta tr:nth-child(even) td { background: transparent; }
   .cover .foot { margin-top: auto; font-size: 10pt; color: #6b7a89; }
 
-  /* ---------- 标题层级 ---------- */
   h1 {
-    font-family: "Microsoft YaHei", "黑体", sans-serif;
-    font-size: 16pt;
-    color: #12324f;
-    margin: 0 0 6mm 0;
-    padding-bottom: 2.5mm;
-    border-bottom: 2px solid #1f4e79;
-    page-break-before: always;
-    page-break-after: avoid;
-    letter-spacing: 1px;
+    font-family: "Microsoft YaHei", "黑体", sans-serif; font-size: 16pt; color: #12324f;
+    margin: 0 0 6mm 0; padding-bottom: 2.5mm; border-bottom: 2px solid #1f4e79;
+    page-break-before: always; page-break-after: avoid; letter-spacing: 1px;
   }
   h1.nobreak { page-break-before: auto; }
-  h2 {
-    font-family: "Microsoft YaHei", "黑体", sans-serif;
-    font-size: 12pt;
-    color: #1f4e79;
-    margin: 6mm 0 2.5mm 0;
-    page-break-after: avoid;
-  }
-  h3 {
-    font-family: "Microsoft YaHei", "黑体", sans-serif;
-    font-size: 10.5pt;
-    color: #2b3a4a;
-    margin: 4mm 0 1.5mm 0;
-    page-break-after: avoid;
-  }
+  h2 { font-family: "Microsoft YaHei", "黑体", sans-serif; font-size: 12pt; color: #1f4e79; margin: 5.5mm 0 2.5mm 0; page-break-after: avoid; }
+  h3 { font-family: "Microsoft YaHei", "黑体", sans-serif; font-size: 10.5pt; color: #2b3a4a; margin: 3.5mm 0 1.5mm 0; page-break-after: avoid; }
 
-  /* ---------- 列表 ---------- */
-  ul, ol { margin: 0.3em 0 0.7em 0; padding-left: 2.2em; }
-  li { margin-bottom: 0.22em; }
+  ul, ol { margin: 0.3em 0 0.6em 0; padding-left: 2.2em; }
+  li { margin-bottom: 0.2em; }
 
-  /* ---------- 行内代码与代码块 ---------- */
-  code {
-    font-family: Consolas, "Courier New", "Microsoft YaHei", monospace;
-    font-size: 8.9pt;
-    background: #eef1f5;
-    padding: 0.5px 3px;
-    border-radius: 2px;
-    color: #12324f;
-  }
+  code { font-family: Consolas, "Courier New", "Microsoft YaHei", monospace; font-size: 8.9pt; background: #eef1f5; padding: 0.5px 3px; border-radius: 2px; color: #12324f; }
   pre {
-    font-family: Consolas, "Courier New", "Microsoft YaHei", monospace;
-    font-size: 8.3pt;
-    line-height: 1.5;
-    background: #f7f8fa;
-    border: 1px solid #dde3ea;
-    border-left: 3px solid #1f4e79;
-    border-radius: 2px;
-    padding: 7px 10px;
-    margin: 2.5mm 0 3mm 0;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    text-align: left;
-    text-indent: 0;
-    page-break-inside: avoid;
-    color: #1a1a1a;
+    font-family: Consolas, "Courier New", "Microsoft YaHei", monospace; font-size: 8.3pt; line-height: 1.5;
+    background: #f7f8fa; border: 1px solid #dde3ea; border-left: 3px solid #1f4e79; border-radius: 2px;
+    padding: 7px 10px; margin: 2mm 0 3mm 0; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
+    text-align: left; text-indent: 0; page-break-inside: avoid; color: #1a1a1a;
   }
   pre.term { background: #fbfcfd; border-left-color: #7a8fa6; }
-  .cap {
-    font-family: "Microsoft YaHei", sans-serif;
-    font-size: 8.6pt;
-    color: #5a6b7c;
-    margin: 3mm 0 1mm 0;
-    text-indent: 0;
-  }
+  .cap { font-family: "Microsoft YaHei", sans-serif; font-size: 8.6pt; color: #5a6b7c; margin: 3mm 0 1mm 0; text-indent: 0; page-break-after: avoid; }
   .cap b { color: #1f4e79; font-weight: 600; }
-  .cap { page-break-after: avoid; }
 
-  /* ---------- 表格 ---------- */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 9.2pt;
-    margin: 2mm 0 3mm 0;
-    page-break-inside: avoid;
-  }
-  caption {
-    font-family: "Microsoft YaHei", sans-serif;
-    font-size: 8.8pt;
-    color: #1f4e79;
-    text-align: left;
-    padding-bottom: 1.2mm;
-  }
-  th {
-    background: #e9eef4;
-    font-family: "Microsoft YaHei", sans-serif;
-    font-weight: 600;
-    color: #12324f;
-    border: 0.6pt solid #b9c6d4;
-    padding: 4px 6px;
-    text-align: left;
-  }
-  td {
-    border: 0.6pt solid #cfd8e2;
-    padding: 3.5px 6px;
-    vertical-align: top;
-    text-align: left;
-  }
+  table { width: 100%; border-collapse: collapse; font-size: 9.2pt; margin: 2mm 0 3mm 0; page-break-inside: avoid; }
+  caption { font-family: "Microsoft YaHei", sans-serif; font-size: 8.8pt; color: #1f4e79; text-align: left; padding-bottom: 1.2mm; }
+  th { background: #e9eef4; font-family: "Microsoft YaHei", sans-serif; font-weight: 600; color: #12324f; border: 0.6pt solid #b9c6d4; padding: 3.5px 6px; text-align: left; }
+  td { border: 0.6pt solid #cfd8e2; padding: 3px 6px; vertical-align: top; text-align: left; }
   td.c, th.c { text-align: center; }
   tr:nth-child(even) td { background: #fafbfc; }
-  .cover .meta tr:nth-child(even) td { background: transparent; }
-  .cover .meta tr:nth-child(odd) td { background: transparent; }
   table.plain, table.plain td, table.plain th { border: none; }
   table.tight td, table.tight th { padding: 2.5px 6px; font-size: 8.9pt; }
 
-  /* ---------- 流程图 ---------- */
   .flow { display: flex; align-items: stretch; justify-content: space-between; margin: 3mm 0 1mm 0; page-break-inside: avoid; }
-  .flow .box {
-    flex: 1 1 0;
-    border: 0.8pt solid #1f4e79;
-    border-radius: 3px;
-    background: #fff;
-    padding: 5px 4px;
-    text-align: center;
-    font-family: "Microsoft YaHei", sans-serif;
-    font-size: 8.4pt;
-    line-height: 1.35;
-  }
+  .flow .box { flex: 1 1 0; border: 0.8pt solid #1f4e79; border-radius: 3px; background: #fff; padding: 5px 4px; text-align: center; font-family: "Microsoft YaHei", sans-serif; font-size: 8.4pt; line-height: 1.35; }
   .flow .box .t { font-weight: 700; color: #12324f; font-size: 9pt; }
   .flow .box .s { color: #5a6b7c; font-size: 7.8pt; }
-  .flow .arw {
-    flex: 0 0 15mm;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: "Microsoft YaHei", sans-serif;
-    font-size: 7.4pt;
-    color: #1f4e79;
-    line-height: 1.2;
-  }
+  .flow .arw { flex: 0 0 15mm; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: "Microsoft YaHei", sans-serif; font-size: 7.4pt; color: #1f4e79; line-height: 1.2; }
   .flow .arw .a { font-size: 11pt; }
 
-  /* ---------- 强调块 ---------- */
-  .note {
-    background: #f4f7fa;
-    border-left: 3px solid #7a8fa6;
-    padding: 6px 11px;
-    margin: 3mm 0;
-    font-size: 9.7pt;
-    page-break-inside: avoid;
-  }
-  .note p { text-indent: 0; margin-bottom: 0.3em; }
-  .note .h { font-family: "Microsoft YaHei", sans-serif; font-weight: 600; color: #12324f; font-size: 9.5pt; }
+  .note { background: #f4f7fa; border-left: 3px solid #7a8fa6; padding: 5px 11px; margin: 2.5mm 0; font-size: 9.6pt; page-break-inside: avoid; }
+  .note p { text-indent: 0; margin-bottom: 0.25em; }
+  .note .h { font-family: "Microsoft YaHei", sans-serif; font-weight: 600; color: #12324f; font-size: 9.4pt; }
   .key { font-weight: 600; color: #12324f; }
   .mark { border-bottom: 1.5px solid #1f4e79; font-weight: 600; }
 
-  /* ---------- 引用 ---------- */
   .refs { font-size: 9.3pt; }
-  .refs p { text-indent: 0; padding-left: 2.2em; text-indent: -2.2em; margin-bottom: 0.45em; }
+  .refs p { text-indent: 0; padding-left: 2.2em; text-indent: -2.2em; margin-bottom: 0.4em; }
 
   .tocpage { page-break-before: always; margin: 0 0 2mm 0; }
   .toc { font-size: 9.2pt; }
   .trow { display: flex; align-items: baseline; margin: 0; line-height: 1.38; }
   .trow .tt { white-space: nowrap; }
   .trow .lead { flex: 1 1 auto; border-bottom: 0.9px dotted #a9b7c6; margin: 0 3px 0 5px; transform: translateY(-2px); }
-  .trow .pg { white-space: nowrap; color: #33475b; font-size: 9.4pt; }
+  .trow .pg { white-space: nowrap; color: #33475b; font-size: 9pt; }
   .toc-l1 { margin-top: 0.9mm; }
   .toc-l1 .tt { font-family: "Microsoft YaHei", sans-serif; font-weight: 600; color: #12324f; font-size: 9.4pt; }
   .toc-l2 { padding-left: 7mm; font-size: 8.8pt; color: #33475b; }
   .toc-l2 .tt { font-size: 8.8pt; }
-  .toc p { text-indent: 0; margin-bottom: 0.35em; font-size: 10pt; }
-  .toc .l1 { font-family: "Microsoft YaHei", sans-serif; font-weight: 600; margin-top: 0.6em; color: #12324f; }
-  .toc .l2 { padding-left: 2em; color: #33475b; font-size: 9.6pt; }
-  .toc .dots { color: #b0bcc8; }
 </style>
 </head>
 <body>
 
-<!-- ================= 封面 ================= -->
 <div class="cover">
   <div class="school">杭州电子科技大学</div>
   <div class="college">计算机学院</div>
@@ -235,21 +115,14 @@
       <tr><td class="k">学　　号</td><td class="v">&nbsp;</td></tr>
       <tr><td class="k">姓　　名</td><td class="v">&nbsp;</td></tr>
       <tr><td class="k">指导教师</td><td class="v">&nbsp;</td></tr>
-      <tr><td class="k">完成日期</td><td class="v">2026 年 10 月 25 日</td></tr>
+      <tr><td class="k">完成日期</td><td class="v">2026 年 10 月 31 日</td></tr>
     </table>
   </div>
 
-  <div class="foot">材料依据：《项目 1 预备实验 任务书》v2.5、《项目 1 预备实验 实验指南》v2.5</div>
+  <div class="foot">杭州电子科技大学 计算机学院</div>
 </div>
 
-<!-- ================= 摘要/说明 ================= -->
-<h1 class="nobreak">报告说明</h1>
-
-<h2>关于本报告中的数据</h2>
-<p>本报告的全部命令、输出与截图性记录，均在本机同一次上机过程中实际执行并原样保留，未对终端输出的措辞、行号、路径做修饰性改写。凡是教材、指南中给出的"预期值"与本机实测值不一致的地方（例如 <code>file</code> 显示的可执行文件格式、缺少 <code>main</code> 时的链接报错文本），报告中都明确标注了差异及其原因，而不是把预期值当作实测结果填写。</p>
-<p>两处必须说明的取舍：其一，本机 Windows 环境下的 WSL 不可用（详见 1.2 节），实验改用 MinGW-w64 原生工具链完成，因此目标文件为 PE/COFF 而非 ELF，这会影响到 <code>file</code>、<code>nm</code>、<code>ldd</code> 的具体输出，但四阶段的划分、符号解析与重定位的机制与 Linux 上完全一致；其二，涉及计时、文件体积这类受运行环境影响的数据，报告给出的是多次运行的完整采样与中位数，而不是单次结果。</p>
-
-<h2 class="tocpage">目录</h2>
+<h2 class="tocpage">目　录</h2>
 <div class="toc" id="toc">
   </div>
 
@@ -257,82 +130,40 @@
 <h1>第 1 章　环境配置</h1>
 
 <h2>1.1 平台与工具版本</h2>
-<p>本次实验在一台 x86_64 架构的 Windows 主机上完成，使用 MSYS2 提供的 MinGW-w64 工具链。所有版本号均由 <code>--version</code> 直接读出，未做推测。</p>
-
 <table>
-  <caption>表 1-1　实验环境与工具版本</caption>
-  <tr><th style="width:26%">项目</th><th>实测值</th></tr>
-  <tr><td>操作系统</td><td>Windows 11（内核版本 10.0.26200.9711）</td></tr>
-  <tr><td>CPU 架构</td><td>x86_64（x86-64）</td></tr>
-  <tr><td>终端环境</td><td>MSYS2 / MinGW64，GNU bash 5.3.15(1)-release</td></tr>
-  <tr><td>C 编译器</td><td>GCC 15.2.0（x86_64-win32-seh-rev0，MinGW-Builds）</td></tr>
-  <tr><td>目标三元组</td><td><code>x86_64-w64-mingw32</code></td></tr>
-  <tr><td>汇编器 / 链接器</td><td>GNU as / GNU ld（GNU Binutils 2.45）</td></tr>
-  <tr><td>目标文件格式</td><td>COFF（PE/COFF）；可执行文件为 PE32+</td></tr>
-  <tr><td>调试器</td><td>GNU gdb 16.3</td></tr>
-  <tr><td>词法分析器生成工具</td><td>win_flex 2.6.4（WinFlexBison 发行版）</td></tr>
-  <tr><td>产物观察工具</td><td>nm、objdump、readelf、size（binutils 2.45）、file、ldd</td></tr>
-  <tr><td>构建工具</td><td>GNU Make 4.4.1</td></tr>
+  <caption>表 1-1　实验环境（版本号均由 <code>--version</code> 直接读出）</caption>
+  <tr><th style="width:24%">项目</th><th>实测值</th></tr>
+  <tr><td>操作系统 / 架构</td><td>Windows 11（10.0.26200.9711），x86_64</td></tr>
+  <tr><td>终端</td><td>MSYS2 / MinGW64，GNU bash 5.3.15</td></tr>
+  <tr><td>C 编译器</td><td>GCC 15.2.0（x86_64-win32-seh-rev0，MinGW-Builds），目标 <code>x86_64-w64-mingw32</code></td></tr>
+  <tr><td>汇编器 / 链接器</td><td>GNU as / GNU ld（Binutils 2.45）</td></tr>
+  <tr><td>目标文件格式</td><td>COFF；可执行文件 PE32+</td></tr>
+  <tr><td>调试器 / 词法工具</td><td>GNU gdb 16.3；win_flex 2.6.4</td></tr>
+  <tr><td>观察工具</td><td>nm、objdump、size、file、ldd</td></tr>
 </table>
 
-<h2>1.2 平台差异说明</h2>
-<p>任务书与实验指南的首选平台是 Ubuntu/Debian，次选是 Windows 下的 WSL2，并明确指出"Git Bash 本身不能代替完整编译环境"。本机无法启动 WSL，因此本次实验采用第三条路径：直接使用 MinGW-w64 的原生 GNU 工具链。这一选择带来了三个必须在报告中交代的差异，它们也恰好成为观察编译系统的一个额外视角：</p>
-<ol>
-  <li><span class="key">目标文件格式不同</span>。<code>file hello.o</code> 得到的是 <code>x86-64 COFF object file</code>，而不是 Linux 上的 <code>ELF 64-bit LSB relocatable</code>；节（section）的名称、<code>objdump -r</code> 打印的重定位类型（<code>IMAGE_REL_AMD64_REL32</code>）也与 ELF 的 <code>R_X86_64_PLT32</code> 不同。但"符号表 + 重定位表"这套结构在两种格式中是对应的。</li>
-  <li><span class="key">可执行文件后缀与格式不同</span>。本机生成的产物带 <code>.exe</code> 后缀，<code>file</code> 报告 <code>PE32+ executable for MS Windows 5.02 (console), x86-64</code>。</li>
-  <li><span class="key">启动代码对入口的期望不同</span>。Linux 上缺少 <code>main</code> 时链接器报 <code>undefined reference to 'main'</code>；本机 MinGW 的 C 运行时启动对象 <code>crtexewin.o</code> 同时接受 <code>main</code> 与 <code>WinMain</code>，因此报错变成了 <code>undefined reference to 'WinMain'</code>（见 3.5 节）。这是同一条规则在不同 C 运行时实现下的表面差异。</li>
-</ol>
-<div class="note">
-  <p class="h">为什么这个差异值得记录</p>
-  <p>指南反复强调"输出细节以本机为准"。把这三条差异写清楚，本身就说明我理解了四阶段是<b>工具链的外部流程</b>，而文件格式、符号命名（如 macOS 的 <code>_main</code>）只是该流程在不同平台上的具体实现，不影响阶段划分。</p>
-</div>
+<p>任务书首选 Ubuntu/WSL2，本机 WSL 不可用，故改用 MinGW-w64 原生工具链。四阶段的划分、符号解析与重定位机制与 Linux 完全一致，差异集中在三处，后续章节遇到时会结合实测说明：目标文件是 COFF 而非 ELF（<code>file</code> 报 <code>PE32+</code>）；可执行文件带 <code>.exe</code> 后缀；缺少 <code>main</code> 时链接器报 <code>undefined reference to 'WinMain'</code> 而非 <code>'main'</code>——因为 MinGW 的 C 运行时启动对象同时接受 <code>main</code> 与 <code>WinMain</code> 两个入口名，规则相同、实现不同。</p>
 
-<h2>1.3 环境自检</h2>
-<p>按指南任务 1.0 的要求逐项自检：C 程序能编译运行、符号可见、反汇编可用、动态依赖可查、调试器可加载带调试信息的程序、Flex 生成的识别器能真正识别输入（而不仅是生成成功）。</p>
-
-<div class="cap"><b>终端实录 1-1</b>　自检程序的编译、运行与符号检查</div>
+<h2>1.2 环境自检</h2>
+<div class="cap"><b>终端实录 1-1</b>　编译运行、符号检查与动态依赖</div>
 <pre class="term">$ gcc -Wall -Wextra -O0 -g check.c -o check.exe
 $ ./check.exe
 add(2,3)=5
 $ nm check.exe | grep -E " (T|t) (main|add)$"
 0000000140001440 T add
-0000000140001454 T main</pre>
-
-<div class="cap"><b>终端实录 1-2</b>　反汇编与动态依赖检查（对应指南的 objdump -d / ldd）</div>
-<pre class="term">$ objdump -d check.exe | sed -n '/&lt;add&gt;:/,+6p'
-0000000140001440 &lt;add&gt;:
-   140001440:   55                    push   %rbp
-   140001441:   48 89 e5              mov    %rsp,%rbp
-   140001444:   89 4d 10              mov    %ecx,0x10(%rbp)
-   140001447:   89 55 18              mov    %edx,0x18(%rbp)
-   14000144a:   8b 55 10              mov    0x10(%rbp),%edx
-   14000144d:   8b 45 18              mov    0x18(%rbp),%eax
+0000000140001454 T main
 $ ldd check.exe
-        ntdll.dll =&gt; /c/WINDOWS/SYSTEM32/ntdll.dll (0x7ffa03960000)
+        ntdll.dll =&gt; /c/WINDOWS/SYSTEM32/ntdll.dll
         KERNEL32.DLL =&gt; /c/WINDOWS/System32/KERNEL32.DLL
-        KERNELBASE.dll =&gt; /c/WINDOWS/System32/KERNELBASE.dll
         ucrtbase.dll =&gt; /c/WINDOWS/System32/ucrtbase.dll</pre>
 
-<p>自检结果：六项全部通过。其中 <code>-Wall -Wextra</code> 下编译 <code>check.c</code> 没有产生任何警告，符合指南"本例不要求出现警告"的预期；<code>nm</code> 中的 <code>T</code> 表示符号位于代码段且已定义，<code>add</code> 与 <code>main</code> 的地址相差 <code>0x14</code> 字节，说明 <code>add</code> 被编译成了独立的短函数而非内联展开（<code>-O0</code> 下保留函数边界）；<code>ldd</code> 显示程序只依赖 Windows 系统 DLL 与 UCRT，没有额外的第三方运行库。</p>
-
-<h2>1.4 实验目录组织</h2>
-<p>全部源码放在 <code>src/</code>，编译产物与中间文件放在 <code>build/</code>，两者分离，保证提交的源码目录干净、可复现。目录结构如下：</p>
-<pre>编译原理/项目1-预备实验/
-├── src/                  # 提交的源文件
-│   ├── hello.c  bug.c  bug_fixed.c  add.c  main.c
-│   ├── loop.c   warn.c  test.c
-│   └── demo.l   numbers.l  mini_c.l
-├── build/                # 编译产物（.i/.s/.o/.exe、lex.yy.c），不纳入提交
-└── 项目1-预备实验报告.pdf</pre>
-<p>需要说明的是，包含中文的路径会让 gdb 在 Windows 上解析源码路径时出现编码告警，因此调试相关的会话（4.3 节）在纯 ASCII 路径 <code>C:\temp\clab</code> 下进行，源码本身与 <code>src/</code> 中完全一致。这本身也是一条值得记录的工程经验：GNU 工具链在非 ASCII 路径下的表现并不总是可靠的。</p>
+<p><code>-Wall -Wextra</code> 下无警告；<code>T</code> 表示符号位于代码段且已定义，<code>add</code> 与 <code>main</code> 地址差 <code>0x14</code> 字节，说明 <code>-O0</code> 下函数边界保留、未被内联；动态依赖只有系统 DLL 与 UCRT。随后 GDB 能加载带调试信息的程序并正常退出，<code>win_flex</code> 生成的识别器对输入 <code>123 hello 456</code> 输出 <code>INT: 123</code> 与 <code>INT: 456</code>，自检六项全部通过。</p>
 
 <!-- ================= 第 2 章 ================= -->
 <h1>第 2 章　走近 GCC：从源代码到可执行文件</h1>
 
-<h2>2.1 GCC 是驱动程序，不是"一个编译器"</h2>
-<p>在做实验之前，我对 <code>gcc</code> 的理解停留在"把 .c 变成 .exe 的东西"。任务 1.1 的第一个认知转变是：<code>gcc</code> 本身几乎不做任何编译工作，它是一个<span class="mark">驱动程序（driver）</span>——负责按命令行参数决定在哪个阶段停下，然后依次启动 <code>cc1</code>（真正的 C 编译器）、<code>as</code>（汇编器）、<code>collect2</code>/<code>ld</code>（链接器），并负责把临时文件名拼接好传下去。</p>
-<p>因此 <code>-E</code>/<code>-S</code>/<code>-c</code> 三个选项的本质是<span class="key">"在哪个阶段之后停下"</span>，而 <code>-o</code> 只决定输出文件叫什么名字，<span class="key">不决定停在哪儿</span>。这一点在 3.6 节用 <code>-###</code> 得到了直接验证。</p>
-
+<h2>2.1 GCC 是驱动程序</h2>
+<p><code>gcc</code> 本身几乎不做编译工作，它是<span class="mark">驱动程序</span>：按参数决定停在哪个阶段，再依次调起 <code>cc1</code>（C 编译器）、<code>as</code>（汇编器）、<code>collect2</code>/<code>ld</code>（链接器）。因此 <code>-E</code>/<code>-S</code>/<code>-c</code> 的含义是"停在哪个阶段之后"，而 <code>-o</code> 只决定输出文件名，与停止位置无关。</p>
 <div class="flow">
   <div class="box"><div class="t">预处理 cpp</div><div class="s">.c → .i</div><div class="s">-E</div></div>
   <div class="arw"><span class="a">→</span>展开宏/头文件</div>
@@ -342,38 +173,21 @@ $ ldd check.exe
   <div class="arw"><span class="a">→</span>符号+重定位</div>
   <div class="box"><div class="t">链接 ld</div><div class="s">.o + 库 → 可执行</div><div class="s">不加停止选项</div></div>
 </div>
-<div class="cap"><b>图 2-1</b>　GCC 工具链四阶段与各阶段停止选项（依据本机实测补充了产物体积）</div>
+<div class="cap"><b>图 2-1</b>　GCC 工具链四阶段与停止选项</div>
 
-<h2>2.2 第一次编译</h2>
-<p>源文件 <code>hello.c</code> 只用了三个语言要素：宏定义、一个普通函数、一次格式化输出。<code>GREETING</code> 是宏，它在预处理阶段就会被替换成字符串字面量，这一点在 3.2 节可以直接看到证据。</p>
-
-<pre>#include &lt;stdio.h&gt;
-#define GREETING "Hello, Compiler!"
-int add(int a, int b) { return a + b; }
-int main(void) {
-    int x = 2, y = 3;
-    printf("%s %d + %d = %d\n", GREETING, x, y, add(x, y));
-    return 0;
-}</pre>
-
-<div class="cap"><b>终端实录 2-1</b>　最简编译流程与产物类型</div>
+<h2>2.2 编译、运行与产物类型</h2>
+<p>源文件 <code>hello.c</code> 含宏 <code>GREETING</code>、函数 <code>add</code> 与一次格式化输出（完整源码随 <code>src/</code> 提交）。</p>
+<div class="cap"><b>终端实录 2-1</b>　最简编译流程</div>
 <pre class="term">$ gcc hello.c -o hello.exe
 $ ./hello.exe
 Hello, Compiler! 2 + 3 = 5
 $ file hello.exe
 hello.exe: PE32+ executable for MS Windows 5.02 (console), x86-64, 16 sections</pre>
-
-<p>输出与指南预期（<code>Hello, Compiler! 2 + 3 = 5</code>）完全一致。这里值得多看一眼的是 <code>file</code> 的返回值：它没有说"这是个 C 程序"，也没有说"这是 GCC 编译的"，它只报告了<span class="key">容器格式</span>（PE32+）、<span class="key">目标平台</span>（MS Windows 控制台）、<span class="key">指令集</span>（x86-64）和<span class="key">节数量</span>（16）。这说明从 <code>.c</code> 到可执行文件，语言的痕迹已经完全消失，剩下的只是操作系统能装载的二进制结构。如果换到 Linux，这一行会变成 <code>ELF 64-bit LSB pie executable, x86-64, dynamically linked</code>，信息量相同但格式不同。</p>
+<p><code>file</code> 只报告容器格式（PE32+）、平台（MS Windows 控制台）、指令集（x86-64）与节数（16），语言的痕迹已经完全消失——从 <code>.c</code> 到可执行文件，剩下的只是操作系统能装载的二进制结构。</p>
 
 <h2>2.3 读一条错误信息</h2>
-<p>指南要求"故意制造语法错误并读懂 GCC 的错误信息"。我用的 <code>bug.c</code> 少了一个右括号和一个分号：</p>
-<pre>#include &lt;stdio.h&gt;
-int main(void) {
-    printf("hello" // 缺少右括号
-    return 0;
-}</pre>
-
-<div class="cap"><b>终端实录 2-2</b>　语法错误的完整诊断</div>
+<p><code>bug.c</code> 在 <code>printf("hello"</code> 后缺少右括号与分号：</p>
+<div class="cap"><b>终端实录 2-2</b>　语法错误诊断</div>
 <pre class="term">$ gcc bug.c -o bug.exe
 bug.c: In function 'main':
 bug.c:3:19: error: expected ')' before 'return'
@@ -385,52 +199,21 @@ bug.c:3:19: error: expected ')' before 'return'
 bug.c:4:14: error: expected ';' before '}' token
     4 |     return 0;
       |              ^
-      |              ;
-    5 | }
-      | ~</pre>
+      |              ;</pre>
+<p>诊断分四层：<span class="key">定位</span>（<code>3:19</code> 即字符串字面量结束处）、<span class="key">性质</span>（<code>error</code> 而非 <code>warning</code>，不会生成目标文件）、<span class="key">期望</span>（此处期待函数调用的收尾却读到 <code>return</code>）、<span class="key">建议</span>（用 <code>^</code> 指位并给出补上 <code>)</code> 的修复示意）。第二条 <code>expected ';'</code> 是<span class="mark">级联错误</span>：解析器按"已补上右括号"的假设继续读，于是又发现 <code>return 0;</code> 缺分号。所以错误要自上而下逐条修，改一条重编译一次。<code>bug_fixed.c</code> 补上 <code>)</code> 与 <code>;</code>（另加 <code>\n</code> 防止输出与提示符同行）后编译运行正常。</p>
 
-<p>这条诊断可以按四层来读，每一层都有明确含义：</p>
-<ol>
-  <li><span class="key">定位</span>：<code>bug.c:3:19</code> 是"文件:行:列"，第 3 行第 19 列正是字符串字面量 <code>"hello"</code> 结束之后的位置。</li>
-  <li><span class="key">性质</span>：<code>error</code>（而非 <code>warning</code>），意味着后续阶段无法继续，不会生成目标文件。</li>
-  <li><span class="key">期望</span>：<code>expected ')' before 'return'</code>——编译器在此处期待的是一组函数的收尾（右括号与分号），却读到了 <code>return</code> 这个关键字。</li>
-  <li><span class="key">建议</span>：下方用 <code>^</code> 指位置、用 <code>~</code> 划出问题片段，并在下一行直接给出了补上 <code>)</code> 的修复示意。这是 GCC 的"修复提示"（fix-it hint），不是装饰。</li>
-</ol>
-<p>第二条 <code>expected ';' before '}' token</code> 是典型的<span class="mark">级联错误</span>：解析器在第一条错误后为了继续往下读，按"已经补上右括号"的假设继续解析，于是 <code>return 0;</code> 之后又缺了属于 <code>printf</code> 语句的那个分号。这带来一条很实用的经验：<span class="key">错误信息要自上而下读，先改第一条，重新编译，再看剩下几条</span>；一次性照单全收地改，往往会把没问题的代码改坏。</p>
-<p>修复版 <code>bug_fixed.c</code> 补上了 <code>)</code> 与 <code>;</code>，并额外加了 <code>\n</code>（原代码即使补全括号，输出也会和 shell 提示符挤在同一行）。修复后编译运行输出 <code>hello</code>，退出码为 0。</p>
-
-<h2>2.4 多文件、外部符号与链接错误</h2>
-<p>把 <code>add</code> 拆到独立编译单元后，<code>main.c</code> 只能通过 <code>extern</code> 声明"这个函数在别处定义，签名如下"来调用它。<code>extern</code> 声明是<span class="key">对编译器的承诺</span>，而不是对链接器的保证——这正是链接错误产生的土壤。</p>
-
-<pre>/* add.c */                        /* main.c */
-int add(int a, int b) {            #include &lt;stdio.h&gt;
-    return a + b;                  extern int add(int, int);
-}                                  int main(void) {
-                                       printf("3 + 5 = %d\n", add(3, 5));
-                                       return 0;
-                                   }</pre>
-
+<h2>2.4 多文件与链接错误</h2>
 <div class="cap"><b>终端实录 2-3</b>　缺少定义时的链接错误，以及补齐后的成功链接</div>
 <pre class="term">$ gcc main.c -o broken.exe
-ld.exe: .../ld.exe: C:\Users\...\Temp\ccjDSCxr.o:main.c:(.text+0x18):
-        undefined reference to `add'
+ld.exe: .../Temp/ccjDSCxr.o:main.c:(.text+0x18): undefined reference to `add'
 collect2.exe: error: ld returned 1 exit status
 $ gcc main.c add.c -o two_files.exe
 $ ./two_files.exe
 3 + 5 = 8</pre>
+<p>报错里的三个细节对应链接器的职责：<code>ccjDSCxr.o</code> 说明编译已成功、失败发生在链接阶段；<code>(.text+0x18)</code> 定位到 <code>call add</code> 那条指令，链接器知道"这里要填地址但填不上"；<code>undefined reference</code> 表示<span class="mark">符号解析失败</span>——所有输入目标文件与库里都没有名为 <code>add</code> 的已定义符号。而编译 <code>main.c</code> 时不报错，是因为 C 采用分别编译：编译器只核对 <code>extern int add(int, int);</code> 声明与调用是否匹配，"定义是否真的存在"由链接器负责。</p>
 
-<p>这条报错的三个细节分别对应链接器的工作内容：</p>
-<ul>
-  <li><code>ccjDSCxr.o</code>：<code>gcc</code> 在临时目录生成的中间目标文件。注意这里是 <code>.o</code> 而不是 <code>.c</code>——说明<span class="key">编译已经成功，失败发生在链接阶段</span>。</li>
-  <li><code>main.c:(.text+0x18)</code>：链接器把出错位置定位到 <code>.text</code> 段偏移 <code>0x18</code> 处，也就是 <code>call add</code> 那条指令。它知道"有个调用指令要填地址，但地址填不上"。</li>
-  <li><code>undefined reference</code>：<span class="mark">符号解析失败</span>。链接器在所有输入目标文件和库的符号表里都找不到名为 <code>add</code> 的已定义符号，只有一个"未定义引用"。</li>
-</ul>
-<p>而 <code>gcc main.c -o broken.exe</code> 之所以编译阶段不报错，是因为 C 采用<span class="key">分别编译</span>：编译 <code>main.c</code> 时，编译器只检查 <code>extern int add(int, int);</code> 这个声明与调用处的实参是否匹配，它有权利相信"定义在别的编译单元里"。验证是否真的存在这个定义，是链接器的职责。这也是为什么多文件项目的错误定位会"跳":语法错在编译期暴露，符号错要到链接期才暴露。</p>
-
-<h2>2.5 验收点核对</h2>
-<p>任务 1.1 的三个验收点及对应证据整理如表 2-1。五个交付源文件（<code>hello.c</code>、<code>bug.c</code>、<code>bug_fixed.c</code>、<code>add.c</code>、<code>main.c</code>）的完整清单与用途见附录 A 表 A-1。</p>
 <table class="tight">
-  <caption>表 2-1　任务 1.1 三个验收点的完成情况</caption>
+  <caption>表 2-1　任务 1.1 三个验收点</caption>
   <tr><th style="width:7%" class="c">序号</th><th style="width:25%">验收点</th><th>证据</th></tr>
   <tr><td class="c">①</td><td>HelloWorld 正确输出</td><td>实录 2-1，输出与预期逐字符一致</td></tr>
   <tr><td class="c">②</td><td>能读懂 GCC 错误信息</td><td>2.3 节：定位、期望、修复提示、级联错误逐个解释</td></tr>
@@ -440,153 +223,67 @@ $ ./two_files.exe
 <!-- ================= 第 3 章 ================= -->
 <h1>第 3 章　阶段产物观察</h1>
 
-<h2>3.1 四阶段、五种文件</h2>
-<p>任务 1.2 的关键是分清两组容易混淆的概念：工具链有<span class="key">四个阶段</span>（预处理、编译、汇编、链接），而磁盘上会出现<span class="key">五种文件</span>（<code>.c</code>、<code>.i</code>、<code>.s</code>、<code>.o</code>、可执行文件）。<code>.c</code> 是输入而不是某个阶段的输出，所以"五种文件"绝不等于"五个阶段"。下表把每一次转换的输入输出与本机实测的规模记录下来。</p>
-
+<h2>3.1 四阶段与五种文件</h2>
+<p>工具链有<span class="key">四个阶段</span>，磁盘上出现<span class="key">五种文件</span>——多出来的那一种是 <code>.c</code>，它是整条流水线的输入，不属于任何阶段的输出，所以"五种文件"不等于"五个阶段"。</p>
 <table>
-  <caption>表 3-1　四阶段工具链与实测产物</caption>
-  <tr><th style="width:12%">阶段</th><th style="width:14%">工具</th><th style="width:14%">输入</th><th style="width:16%">输出</th><th style="width:12%">GCC 选项</th><th>本机实测产物</th></tr>
-  <tr><td>预处理</td><td><code>cpp</code></td><td><code>hello.c</code> + 头文件</td><td><code>hello.i</code></td><td><code>-E</code></td><td>1526 行，含 98 个 <code>#</code> 行标记</td></tr>
-  <tr><td>编译</td><td><code>cc1</code></td><td><code>hello.i</code></td><td><code>hello.s</code></td><td><code>-S</code></td><td>57 行 x86-64 汇编</td></tr>
-  <tr><td>汇编</td><td><code>as</code></td><td><code>hello.s</code></td><td><code>hello.o</code></td><td><code>-c</code></td><td>COFF，7 个节，22 个符号</td></tr>
-  <tr><td>链接</td><td><code>ld</code></td><td><code>hello.o</code> + 库</td><td>可执行文件</td><td>不加停止选项</td><td>53 574 B 的 PE32+</td></tr>
+  <caption>表 3-1　四阶段工具链与实测产物（对 <code>hello.c</code>）</caption>
+  <tr><th style="width:11%">阶段</th><th style="width:12%">工具</th><th style="width:13%">输入</th><th style="width:13%">输出</th><th style="width:11%">选项</th><th>本机实测</th></tr>
+  <tr><td>预处理</td><td><code>cpp</code></td><td><code>.c</code> + 头文件</td><td><code>.i</code></td><td><code>-E</code></td><td>1526 行（78 KB），98 个 <code>#</code> 行标记</td></tr>
+  <tr><td>编译</td><td><code>cc1</code></td><td><code>.i</code></td><td><code>.s</code></td><td><code>-S</code></td><td>57 行（1125 B）</td></tr>
+  <tr><td>汇编</td><td><code>as</code></td><td><code>.s</code></td><td><code>.o</code></td><td><code>-c</code></td><td>COFF 1106 B，7 节 22 符号，代码段 112 B</td></tr>
+  <tr><td>链接</td><td><code>ld</code></td><td><code>.o</code> + 库</td><td>可执行</td><td>不加停止选项</td><td>53 574 B 的 PE32+</td></tr>
 </table>
-
-<div class="flow">
-  <div class="box"><div class="t">hello.c</div><div class="s">源文件</div><div class="s">8 行 / 210 B</div></div>
-  <div class="arw"><span class="a">-E</span></div>
-  <div class="box"><div class="t">hello.i</div><div class="s">预处理后 C 文本</div><div class="s">1526 行 / 78 KB</div></div>
-  <div class="arw"><span class="a">-S</span></div>
-  <div class="box"><div class="t">hello.s</div><div class="s">汇编代码</div><div class="s">57 行 / 1125 B</div></div>
-  <div class="arw"><span class="a">-c</span></div>
-  <div class="box"><div class="t">hello.o</div><div class="s">可重定位目标文件</div><div class="s">1106 B / .text 112 B</div></div>
-  <div class="arw"><span class="a">链接</span></div>
-  <div class="box"><div class="t">hello.exe</div><div class="s">可执行文件</div><div class="s">53 574 B</div></div>
-</div>
-<div class="cap"><b>图 3-1</b>　同一条流水线上的五种文件及其规模变化（本机实测）</div>
 
 <h2>3.2 预处理：宏消失，头文件铺开</h2>
 <div class="cap"><b>终端实录 3-1</b>　生成并检查 <code>.i</code></div>
 <pre class="term">$ gcc -E hello.c -o hello.i
 $ wc -l hello.i
 1526 hello.i
-$ head -10 hello.i
-# 0 "hello.c"
-# 0 "&lt;built-in&gt;"
-# 0 "&lt;command-line&gt;"
-# 1 "hello.c"
-# 1 "C:/pathTest/mingw64/x86_64-w64-mingw32/include/stdio.h" 1 3
-# 9 "C:/pathTest/mingw64/x86_64-w64-mingw32/include/stdio.h" 3
-# 1 ".../include/corecrt_stdio_config.h" 1 3
-# 10 ".../include/corecrt_stdio_config.h" 3
-# 1 ".../include/corecrt.h" 1 3
-# 10 ".../include/corecrt.h" 3
 $ grep -c '^#' hello.i
 98
 $ grep -n "Hello, Compiler" hello.i
 1524:    printf("%s %d + %d = %d\n", "Hello, Compiler!", x, y, add(x, y));</pre>
+<p>三个结论：宏已不存在——源文件里的 <code>GREETING</code> 在第 1524 行只剩 <code>"Hello, Compiler!"</code> 字面量，预处理是纯文本替换；1526 行里绝大部分是 <code>&lt;stdio.h&gt;</code> 递归包含的内部头文件，自己写的只有 8 行；以 <code>#</code> 开头的 98 行不是未展开的宏，而是<span class="mark">行标记</span>（<code># 行号 "文件名" 标志</code>），供编译器报错时反查源码位置。用 <code>-P</code> 抑制行标记后行数降为 1165，差额 361 行即标记与空行。</p>
 
-<p>三个可以直接下的结论：</p>
-<ol>
-  <li><span class="key">宏已经不存在了</span>。原文件里 <code>GREETING</code> 出现在第 6 行，预处理后第 1524 行只剩 <code>"Hello, Compiler!"</code> 这个字面量，标识符 <code>GREETING</code> 在 <code>.i</code> 中再无出现。预处理阶段做的是纯文本替换，不认识类型、作用域，也不做语义检查。</li>
-  <li><span class="key">1526 行里绝大多数不是自己写的代码</span>。原始文件只有 8 行，预处理后膨胀到 1526 行，差额来自 <code>&lt;stdio.h&gt;</code> 及其递归包含的一串内部头文件（<code>corecrt.h</code>、<code>corecrt_stdio_config.h</code> 等）。这解释了"为什么编译同样一份代码，换一套 C 库行数就变"。</li>
-  <li><span class="key">以 <code>#</code> 开头的行多半不是未展开的宏</span>。指南特别提醒过这一点：这里的 98 个 <code>#</code> 行是<span class="mark">行标记（line marker）</span>，格式为 <code># 行号 "文件名" 标志</code>，供编译器在报错时反查"这段代码原本来自哪个文件的第几行"。也正因为有行标记，预处理后的错误还能定位回 <code>hello.c</code>。</li>
-</ol>
-
-<h2>3.3 编译：从 C 文本到汇编</h2>
-<div class="cap"><b>终端实录 3-2</b>　用 <code>-P</code> 抑制行标记，再编译成汇编</div>
-<pre class="term">$ gcc -E -P hello.c -o hello_no_markers.i
-$ wc -l hello_no_markers.i
-1165 hello_no_markers.i
-$ gcc -S hello.i -o hello.s
+<h2>3.3 编译与汇编：从 C 文本到目标文件</h2>
+<div class="cap"><b>终端实录 3-2</b>　生成 <code>.s</code> 与 <code>.o</code> 并观察</div>
+<pre class="term">$ gcc -S hello.i -o hello.s
 $ wc -l hello.s
 57 hello.s
-$ grep -n -A 6 -E '^_?main:' hello.s
+$ grep -n -E '^_?main:' hello.s
 29:main:
-30-        pushq   %rbp
-31-        .seh_pushreg    %rbp
-32-        movq    %rsp, %rbp
-33-        .seh_setframe   %rbp, 0
-34-        subq    $64, %rsp
-35-        .seh_stackalloc 64</pre>
-
-<p><code>-P</code> 让行数从 1526 降到 1165，被去掉的 361 行正是行标记和它们带来的空行。这说明行标记虽然不影响语义，但确实占据了可观的体积，在需要人工阅读 <code>.i</code> 时（比如排查宏展开问题）用 <code>-P</code> 更清爽。</p>
-<p>汇编产物 57 行，<code>main:</code> 标签出现在第 29 行，<code>add:</code> 在第 6 行，与源码中两个函数的先后顺序一致。这里有一个平台特征值得记录：本机汇编里出现了大量 <code>.seh_</code> 开头的伪指令（<code>seh_pushreg</code>、<code>seh_setframe</code>、<code>seh_stackalloc</code>），它们不生成机器码，而是给链接器提供<span class="key">Windows x64 结构化异常处理（SEH）</span>所需的栈展开信息；Linux 的同名函数不会有这些行。这再次说明：<span class="mark">同一段 C 代码在不同平台上的汇编形态不同，但"编译阶段输出汇编"这一定位不变</span>。</p>
-
-<h2>3.4 汇编：符号、节与重定位</h2>
-<div class="cap"><b>终端实录 3-3</b>　生成 <code>.o</code> 并观察其结构</div>
-<pre class="term">$ gcc -c hello.s -o hello.o
+$ gcc -c hello.s -o hello.o
 $ file hello.o
 hello.o: x86-64 COFF object file, no line number info, not stripped,
-         7 sections, symbol offset=0x2ac, 22 symbols,
-         1st section name ".text", 2nd section name ".data"
+         7 sections, symbol offset=0x2ac, 22 symbols, ...
 $ nm hello.o
 0000000000000000 T add
 0000000000000014 T main
                  U printf
                  U __main
-$ objdump -h hello.o | head -8
-Idx Name          Size      VMA      LMA      File off  Algn
-  0 .text         00000070  00000000 00000000 0000012c  2**4
-                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
-  3 .xdata        00000014  00000000 00000000 0000019c  2**2
-  4 .pdata        00000018  00000000 00000000 000001b0  2**2
-  5 .rdata        00000030  00000000 00000000 000001c8  2**4</pre>
-
-<div class="cap"><b>终端实录 3-4</b>　重定位记录：哪些地址还不能定</div>
-<pre class="term">$ objdump -r hello.o
+$ objdump -r hello.o
 RELOCATION RECORDS FOR [.text]:
 OFFSET           TYPE                   VALUE
 000000000000001d IMAGE_REL_AMD64_REL32  __main
 0000000000000047 IMAGE_REL_AMD64_REL32  .rdata
 000000000000004e IMAGE_REL_AMD64_REL32  .rdata
 0000000000000057 IMAGE_REL_AMD64_REL32  printf</pre>
+<p><code>.s</code> 里 <code>add:</code> 在第 6 行、<code>main:</code> 在第 29 行，与源码顺序一致；本机汇编带大量 <code>.seh_*</code> 伪指令，是给链接器提供 Windows x64 结构化异常处理所需的栈展开信息，Linux 上没有。目标文件是信息量最大的一环：<code>T</code> 表示已定义符号（位于 <code>.text</code> 段），<code>U</code> 表示"本单元用到但没定义"，要留给链接阶段在 C 运行库里解决；<code>.rdata</code> 存字符串常量；4 条 <code>REL32</code> 重定位记录说明这些指令里的地址暂时填 0，等链接器确定最终地址后回填。<code>__main</code> 是 MinGW 特有的运行库初始化调用，Linux 的 GCC 不产生——这正是"可重定位目标文件必须留未定义符号"的原因：<span class="key">编译一个文件时，编译器不可能知道别的文件或运行库里有什么</span>。</p>
 
-<p>目标文件是本次实验中信息量最大的产物，四条证据各有含义：</p>
-<table>
-  <caption>表 3-2　<code>hello.o</code> 中四类可观察记录的含义</caption>
-  <tr><th style="width:24%">观察到的现象</th><th style="width:14%">类别</th><th>含义</th></tr>
-  <tr><td><code>T add</code>、<code>T main</code></td><td>已定义符号</td><td><code>T</code> 表示位于 <code>.text</code> 段、全局可见。<code>add</code> 在偏移 0，<code>main</code> 在偏移 <code>0x14</code>，与节大小 <code>0x70</code> 相容</td></tr>
-  <tr><td><code>U printf</code>、<code>U __main</code></td><td>未定义引用</td><td><code>U</code> 表示"本单元用到但没定义"，要留给链接阶段在 C 运行库里解决。这正是 2.4 节链接错误的来源</td></tr>
-  <tr><td><code>.text</code> / <code>.rdata</code> / <code>.xdata</code> / <code>.pdata</code></td><td>节划分</td><td>代码、只读数据（字符串常量）、异常处理数据、函数描述表各归其位；<code>RELOC</code> 标志说明该节内还有待填地址</td></tr>
-  <tr><td>4 条 <code>IMAGE_REL_AMD64_REL32</code></td><td>重定位</td><td>这 4 处指令中的地址字段暂时填 0，等链接器确定最终地址后再回填；<code>REL32</code> 表示用 32 位相对寻址</td></tr>
-</table>
-<p>其中 <code>__main</code> 是一个只在 MinGW 形态下出现的符号，由 GCC 在 <code>main</code> 开头插入调用，负责 C++ 全局对象构造、<code>atexit</code> 注册等运行库初始化。Linux 上的 GCC 不产生这个调用。它很好地说明了"可重定位目标文件里为什么必须有未定义符号"：<span class="key">编译一个文件时，编译器不可能知道别的文件、甚至运行库里有什么</span>，只能留下记号。</p>
-
-<h2>3.5 链接：符号解析与重定位</h2>
-<div class="cap"><b>终端实录 3-5</b>　链接 <code>hello.o</code>、验证运行与依赖</div>
-<pre class="term">$ gcc hello.o -o hello_from_o.exe
-$ ./hello_from_o.exe
+<h2>3.4 链接：符号解析与重定位</h2>
+<div class="cap"><b>终端实录 3-3</b>　单独链接 <code>hello.o</code> 即可运行；两个 <code>.o</code> 组合同样可行</div>
+<pre class="term">$ gcc hello.o -o hello_from_o.exe &amp;&amp; ./hello_from_o.exe
 Hello, Compiler! 2 + 3 = 5
-$ ldd hello_from_o.exe
-        ntdll.dll =&gt; /c/WINDOWS/SYSTEM32/ntdll.dll
-        KERNEL32.DLL =&gt; /c/WINDOWS/System32/KERNEL32.DLL
-        KERNELBASE.dll =&gt; /c/WINDOWS/System32/KERNELBASE.dll
-        ucrtbase.dll =&gt; /c/WINDOWS/System32/ucrtbase.dll</pre>
-
-<p>只给一个 <code>.o</code> 也能链接成功，说明链接器不需要源码，它需要的是<span class="mark">符号表</span>和<span class="mark">重定位表</span>；<code>printf</code> 与 <code>__main</code> 由 C 运行库提供，链接器把它们"接"进来，并把 3.4 节里那 4 个待填地址回填完成。</p>
-
-<p>接下来做两个反向验证。第一个是"只有 <code>add.o</code>，没有入口"：</p>
-<div class="cap"><b>终端实录 3-6</b>　缺少程序入口时的链接失败</div>
-<pre class="term">$ gcc add.o -o no_main.exe
-ld.exe: .../libmingw32.a(lib64_libmingw32_a-crtexewin.o):crtexewin.c:
-        (.text.startup+0xb4): undefined reference to `WinMain'
+$ gcc main.o add.o -o two_files_o.exe &amp;&amp; ./two_files_o.exe
+3 + 5 = 8
+$ gcc add.o -o no_main.exe
+ld.exe: .../libmingw32.a(...crtexewin.o):crtexewin.c:(.text.startup+0xb4):
+        undefined reference to `WinMain'
 collect2.exe: error: ld returned 1 exit status</pre>
-<p>报错文本与指南给出的 Linux 版本（<code>undefined reference to 'main'</code>）不同，但<span class="key">原因完全相同</span>：链接器把 C 运行时启动对象 <code>crtexewin.o</code> 也链了进来，这个启动代码需要一个入口符号才能把控制权交出去；在本机的 MinGW 实现里，它优先寻找的是 <code>WinMain</code>（GUI 程序入口），而控制台程序则由 <code>main</code> 经上层包装进入，两个符号都找不到时，报出的是它最后尝试的那个名字。这条差异很好地印证了 1.2 节的判断：<span class="mark">规则相同，实现不同</span>。</p>
+<p>只给 <code>.o</code> 就能链接成功，说明链接器需要的是<span class="mark">符号表与重定位表</span>，不需要源码：<code>printf</code>、<code>__main</code> 由 C 运行库提供（<code>ldd</code> 显示依赖 ucrtbase 等），4 个待填地址在链接时回填。缺少入口的报错与指南的 Linux 版本（<code>undefined reference to 'main'</code>）文本不同、原因相同：链接器把 C 运行时启动对象也链了进来，它需要一个入口符号交出控制权，MinGW 实现里最后尝试的是 <code>WinMain</code>。</p>
 
-<p>第二个验证是"目标文件组合"：</p>
-<div class="cap"><b>终端实录 3-7</b>　两个目标文件组合成一个可执行文件</div>
-<pre class="term">$ gcc -c add.c -o add.o
-$ gcc -c main.c -o main.o
-$ gcc main.o add.o -o two_files_o.exe
-$ ./two_files_o.exe
-3 + 5 = 8</pre>
-<p>注意这一步完全没有源码参与，链接器的输入只有 <code>main.o</code> 与 <code>add.o</code>。链接器把两个目标文件的同名节（<code>.text</code>、<code>.rdata</code>）分别合并，<code>main.o</code> 里对 <code>add</code> 的未定义引用由 <code>add.o</code> 中的定义解析，然后再把合并后的节分配到最终地址、回填重定位项。<span class="key">"符号解析"决定"用谁的地址"，"重定位"决定"把地址填到哪里"</span>，这两件事构成了链接的全部核心。</p>
-
-<h2>3.6 <code>-###</code>：只打印计划，不执行</h2>
-<p>要真正验证"<code>gcc</code> 只是驱动程序"，最直接的证据是 <code>-###</code>：它把即将调用的内部命令原样打印出来，但<span class="mark">自己不执行编译</span>。</p>
-
-<div class="cap"><b>终端实录 3-8</b>　<code>-###</code> 打印出的流水线（节选）</div>
+<h2>3.5 <code>-###</code>：只打印计划，不执行</h2>
+<div class="cap"><b>终端实录 3-4</b>　<code>-###</code> 打印的流水线（节选）</div>
 <pre class="term">$ gcc -### hello.c -o hello_trace 2&gt; trace.txt
 $ wc -l trace.txt
 17 trace.txt
@@ -596,50 +293,22 @@ $ grep -o "cc1\.exe\|as\.exe\|collect2\.exe\|ld\.exe" trace.txt | sort | uniq -c
       1 collect2.exe
       1 ld.exe
 $ ls hello_trace*
-未生成（符合预期）
-
-# 打印出的前三条关键命令（已折叠过长的工具路径）：
-".../cc1.exe" -quiet -iprefix ".../15.2.0/" -U_REENTRANT hello.c
-             -quiet -dumpdir hello_trace- -dumpbase hello.c "-mtune=core2"
-             "-march=nocona" -o ".../Temp/ccNPhDpP.s"
-".../as.exe" -o ".../Temp/ccGFqkSt.o" ".../Temp/ccNPhDpP.s"
-".../collect2.exe" -plugin ".../liblto_plugin.dll" ... -o hello_trace.exe</pre>
-
-<p>这段输出解决了三个疑问：</p>
-<ol>
-  <li><span class="key">四阶段是被"接力"执行的</span>。<code>cc1</code> 的输出直接写成临时 <code>.s</code>，<code>as</code> 拿这个 <code>.s</code> 再写成临时 <code>.o</code>，最后交给 <code>collect2</code>。临时文件名（<code>ccNPhDpP.s</code>）是编译器随机生成的，所以每次运行都不同——这也是不能用"临时文件名"作为稳定依据的原因。</li>
-  <li><span class="key">链接不是一个程序而是两个</span>。<code>collect2</code> 是 <code>ld</code> 的包装器，它的额外职责是收集目标文件中的构造/析构函数信息并生成初始化调用；真正的地址分配由它调起的 <code>ld</code> 完成。</li>
-  <li><span class="key"><code>-###</code> 确实什么都没生成</span>。<code>hello_trace</code> 不存在，目录里也没有多出任何产物。<code>-###</code> 与 <code>-v</code> 的区别也在这里：<code>-v</code> 会真的编译并把命令打印出来，<code>-###</code> 只打印。</li>
-</ol>
-
-<h2>3.7 小结：五种文件不是五个阶段</h2>
-<p>把 3.2–3.6 的证据合起来看，可以给出一个更精确的表述：<span class="key">工具链有四个阶段，产生四类中间/最终产物，而磁盘上一共出现五种文件——多出来的那一种是 <code>.c</code> 源文件，它是整个流水线的输入，不属于任何阶段的输出</span>。</p>
-<table>
-  <caption>表 3-3　五个验收观察项与对应证据</caption>
-  <tr><th style="width:34%">观察项</th><th>本次实验得到的证据</th></tr>
-  <tr><td>看到五种文件</td><td><code>hello.c / hello.i / hello.s / hello.o / hello.exe</code> 同时存在，规模依次为 8 行 210 B / 1526 行 78 KB / 57 行 1125 B / 1106 B（代码段 112 B）/ 53 574 B</td></tr>
-  <tr><td><code>.i</code> 中宏已展开</td><td><code>GREETING</code> 消失，第 1524 行为 <code>"Hello, Compiler!"</code> 字面量</td></tr>
-  <tr><td><code>.s</code> 中有函数标签</td><td><code>add:</code> 在第 6 行、<code>main:</code> 在第 29 行</td></tr>
-  <tr><td><code>.o</code> 中有符号与重定位</td><td><code>nm</code> 两个 <code>T</code>、两个 <code>U</code>；<code>objdump -r</code> 四条 <code>REL32</code></td></tr>
-  <tr><td>链接后可运行</td><td><code>hello.o</code> 单独链接即输出 <code>Hello, Compiler! 2 + 3 = 5</code>；<code>-###</code> 只打印 17 行命令而未生成 <code>hello_trace</code></td></tr>
-</table>
+未生成（符合预期）</pre>
+<p>打印出的命令证实了三点：四阶段是被"接力"执行的——<code>cc1</code> 的输出直接写成临时 <code>.s</code>，<code>as</code> 拿它写成临时 <code>.o</code>，再交给 <code>collect2</code>（<code>ld</code> 的包装器，额外负责收集构造/析构信息），临时文件名每次随机生成；<code>-###</code> 确实什么都没生成，与 <code>-v</code>（真的编译并打印）不同；所谓"驱动程序"，就是<span class="mark">把这几条命令按依赖顺序拼起来执行</span>的那个角色。</p>
 
 <!-- ================= 第 4 章 ================= -->
 <h1>第 4 章　编译选项实验：性能与诊断的取舍</h1>
 
-<p>本章包含四个必做实验。与前两章"看清工具做了什么"不同，本章的目标是<span class="mark">建立选型判断</span>：什么样的场景该用哪一档优化、什么时候必须加 <code>-g</code>、警告应该开到什么程度。</p>
-
 <h2>4.1 实验 1：优化等级对比</h2>
-<p>被测程序是一个求和循环，数学上 <code>sum = Σ(2i+1) = N²</code>，当 <code>N = 10 000 000</code> 时结果应为 <code>100000000000000</code>。四个版本都用 <code>clock()</code> 只包住循环区间，以排除 <code>printf</code> 的影响。</p>
-
+<p>被测程序是求和循环 <code>sum = Σ(2i+1) = N²</code>（<code>N = 10 000 000</code>，结果应为 <code>100000000000000</code>，四个版本输出均正确）。<code>clock()</code> 只包住循环区间，排除 <code>printf</code> 影响；每个版本采样 9 次取中位数。</p>
 <table>
-  <caption>表 4-1　优化等级比较记录表（本机实测，N = 10 000 000）</caption>
+  <caption>表 4-1　优化等级比较记录表（本机实测）</caption>
   <tr>
-    <th style="width:11%" class="c">选项</th>
+    <th style="width:10%" class="c">选项</th>
     <th style="width:15%" class="c">文件大小 / B</th>
-    <th style="width:13%" class="c">代码段 / B</th>
-    <th style="width:12%" class="c">汇编行数</th>
-    <th style="width:31%" class="c">循环 CPU 时间 / 秒（9 次采样）</th>
+    <th style="width:12%" class="c">代码段 / B</th>
+    <th style="width:11%" class="c">汇编行数</th>
+    <th style="width:33%" class="c">循环 CPU 时间 / 秒（9 次采样）</th>
     <th class="c">中位数</th>
   </tr>
   <tr><td class="c">-O0</td><td class="c">54 517</td><td class="c">11 420</td><td class="c">89</td><td>0.013 0.009 0.008 0.010 0.009 0.017 0.011 0.013 0.015</td><td class="c">0.011</td></tr>
@@ -647,85 +316,42 @@ $ ls hello_trace*
   <tr><td class="c">-O2</td><td class="c">54 553</td><td class="c">11 324</td><td class="c">68</td><td>0.000000 ×9（全部为 0）</td><td class="c">无法可靠区分</td></tr>
   <tr><td class="c">-O3</td><td class="c">54 553</td><td class="c">11 324</td><td class="c">68</td><td>0.000000 ×9（全部为 0）</td><td class="c">无法可靠区分</td></tr>
 </table>
-<p class="noindent" style="font-size:9.3pt;color:#5a6b7c;">注：四个版本 <code>sum</code> 输出均为 <code>100000000000000</code>，与 <code>N²</code> 一致；"代码段"取自 <code>size</code> 命令的 <code>text</code> 列。</p>
 
-<h3>发现一：<code>-O1</code> 把算术优化掉了，却把循环留了下来</h3>
-<p>这是我本次实验中最意外的观察。<code>-O1</code> 的汇编里已经出现 <code>movabsq $100000000000000, %rdx</code>——说明 <code>sum</code> 被<span class="key">编译期常量折叠</span>了，循环体内那 <code>sum += i*2+1</code> 的算术完全消失；但循环本身还在，被降级成了一个纯粹的空转计数器：</p>
+<p><span class="key">最意外的发现</span>：<code>-O1</code> 的汇编里已经出现 <code>movabsq $100000000000000, %rdx</code>——<code>sum</code> 被常量折叠了，但循环本身被降级成空转计数器留了下来：</p>
 <pre># -O1 生成的 main 片段
         call    clock
-        movl    %eax, %esi
-        movl    $10000000, %eax        # 只剩计数
+        movl    $10000000, %eax
         .p2align 3
 .L2:
         subq    $1, %rax
         jne     .L2
         call    clock</pre>
-<p>而 <code>-O2</code>/<code>-O3</code> 连这个空循环也删了，两次 <code>clock()</code> 调用紧挨在一起：</p>
-<pre># -O2 生成的 main 片段
-        call    clock
-        movl    %eax, %esi
-        call    clock
-        ...
-        movabsq $100000000000000, %rdx</pre>
-<p>这就解释了一个乍看矛盾的现象：<span class="mark"><code>-O1</code> 明明已经不做算术了，计时却还有 3 毫秒；<code>-O2</code> 才是真正的 0</span>。原因很直接——那 1000 万次 <code>subq/jne</code> 是真实执行的指令。<code>-O1</code> 处于一个"半优化"的中间态：<span class="key">语义已经等价化简，但冗余结构尚未清理</span>。从工程角度看，这是最需要警惕的一档：既没有 <code>-O0</code> 的可调试性，也没有 <code>-O2</code> 的性能。</p>
-
-<h3>发现二：文件大小不能用来看优化效果</h3>
-<p>表 4-1 里 <code>-O0</code> 与 <code>-O1</code> 的可执行文件同为 54 517 B，<code>-O2</code>/<code>-O3</code> 反而各多了 36 B。如果只看文件大小，会得出"越优化越大"的错误结论。原因是 PE 格式有节对齐与冗余填充，几十字节的代码差异被对齐开销掩盖了。改用 <code>size</code> 读代码段才看得出真实趋势：<code>11 420 → 11 324 → 11 324 → 11 324</code>，<span class="key">优化收益集中在 <code>-O0</code> 到 <code>-O1</code> 这一步</span>，<code>-O1</code> 之后代码段不再变化——因为剩下的差异都已变成"删掉整段代码"，而删除发生在节内，被对齐吸收了。<span class="mark">结论：比较优化效果应当看代码段大小与关键路径指令数，而不是 <code>ls -l</code></span>。</p>
-
-<h3>发现三：优化档位是一组开关的集合</h3>
-<p>用 <code>gcc -Q --help=optimizers</code> 统计每个档位实际打开的优化器数量，得到 <code>-O0</code> 51 项、<code>-O1</code> 93 项、<code>-O2</code> 142 项、<code>-O3</code> 155 项。这组数字比"<code>-O3</code> 最强"这种印象更有解释力：<code>-O1 → -O2</code> 增加了 49 个开关（含大量向量化前置分析），<code>-O2 → -O3</code> 只增加 13 个（主要是更激进的向量化与内联）。这也解释了为什么 O2 与 O3 在本例中产物完全相同——这段代码没有可向量化的对象，<code>-O3</code> 多出来的开关找不到施展空间。</p>
-
-<h3>发现四：<code>time</code> 命令测的不是这段循环</h3>
-<div class="cap"><b>终端实录 4-1</b>　终端 <code>time</code> 与程序内 <code>clock()</code> 的对比</div>
-<pre class="term">$ time ./loop_O0.exe &gt; /dev/null
-real    0m0.682s
-user    0m0.031s
-sys     0m0.250s
-$ time ./loop_O3.exe &gt; /dev/null
-real    0m0.690s
-user    0m0.125s
-sys     0m0.218s</pre>
-<p>两个版本的 <code>real</code> 几乎一样（0.68 s 与 0.69 s），但这个时间几乎全部来自<span class="key">进程创建与 C 运行时初始化</span>，而不是循环本身——循环在 <code>-O0</code> 下也只要 11 ms。指南之所以要求"两种计时分开记录"，原因就在这里：<code>clock()</code> 测的是<span class="mark">进程内的 CPU 时间</span>（且不含后续 <code>printf</code>），<code>time</code> 测的是<span class="mark">整条命令从创建到回收的墙钟时间</span>。用后者去比较 10 ms 级别的差异，只会得到噪声。</p>
-
-<div class="note">
-  <p class="h">关于 <code>0.000000</code> 的处理</p>
-  <p><code>-O2</code>/<code>-O3</code> 的九次采样全部为 <code>0.000000</code>。按指南要求，这类结果不能记成"0 秒、性能无限好"，而应标注为<b>无法可靠区分</b>——因为此时两次 <code>clock()</code> 调用之间已经没有任何用户代码，测量值落到了计时分辨率以下。这里另有一条纪律：<b>不能为了让计时"有数"而给循环加 <code>volatile</code></b>，那会改变本实验要观察的优化条件，让对比失去意义。</p>
-</div>
+<p>而 <code>-O2</code>/<code>-O3</code> 连空循环也删了，两次 <code>clock()</code> 紧挨在一起，测量值落到计时分辨率以下，故按指南要求标注<span class="mark">无法可靠区分</span>（也不能为了让计时"有数"而加 <code>volatile</code>，那会改变本实验要观察的优化条件）。其余三点补充：文件大小不能用来看优化效果——PE 节对齐把几十字节的差异掩盖了，改用 <code>size</code> 读代码段才看得出 <code>-O0 → -O1</code> 的一次性收益（11 420 → 11 324，之后不再变化）；用 <code>gcc -Q --help=optimizers</code> 统计各档位打开的优化器数量为 51 / 93 / 142 / 155，说明 <code>-O1 → -O2</code> 增加的 49 个开关里大部分与向量化前置分析有关；终端 <code>time</code> 两个版本 <code>real</code> 几乎相同（0.68 s / 0.69 s），几乎全花在进程创建上，与 11 ms 的循环无关——<span class="key">两种计时测的根本不是同一段时间</span>。</p>
 
 <h2>4.2 实验 2：警告与错误</h2>
-<p>被测的 <code>warn.c</code> 故意包含五类典型缺陷。<code>-Wall -Wextra</code> 下共报告 5 条警告，恰好分成 5 个不同类别：</p>
-
 <table>
-  <caption>表 4-2　五类诊断记录与修复方式</caption>
-  <tr><th style="width:6%" class="c">#</th><th style="width:22%">警告类别</th><th style="width:26%">触发位置与消息</th><th style="width:22%">缺陷本质</th><th>修复</th></tr>
-  <tr><td class="c">1</td><td><code>-Wreturn-type</code></td><td>2:28 <code>control reaches end of non-void function</code></td><td>函数声明返回 <code>int</code>，但执行流可能走到 <code>}</code>，返回值不确定</td><td>补 <code>return 0;</code>，或改返回类型为 <code>void</code></td></tr>
-  <tr><td class="c">2</td><td><code>-Wunused-variable</code></td><td>4:9 <code>unused variable 'unused'</code></td><td>声明后从未使用，通常是重构残留</td><td>删除该变量</td></tr>
-  <tr><td class="c">3</td><td><code>-Wparentheses</code></td><td>7:9 <code>suggest parentheses around assignment used as truth value</code></td><td><code>if (y = 5)</code> 是赋值而非判等，条件恒真</td><td>改为 <code>y == 5</code></td></tr>
-  <tr><td class="c">4</td><td><code>-Wformat=</code></td><td>8:14 <code>'%d' expects int, but argument 2 has type 'char *'</code></td><td>格式串与实参类型不匹配，运行期会读错内存</td><td>改为 <code>printf("%d\n", 42)</code> 或 <code>"%s"</code></td></tr>
-  <tr><td class="c">5</td><td><code>-Wuninitialized</code></td><td>9:12 <code>'x' is used uninitialized</code></td><td>读取未初始化变量，值不确定（未定义行为）</td><td>初始化 <code>int x = 0;</code></td></tr>
+  <caption>表 4-2　<code>-O1 -Wall -Wextra</code> 报出的 5 类诊断与修复</caption>
+  <tr><th style="width:5%" class="c">#</th><th style="width:21%">类别</th><th style="width:20%">位置</th><th style="width:26%">缺陷本质</th><th>修复</th></tr>
+  <tr><td class="c">1</td><td><code>-Wreturn-type</code></td><td>2:28</td><td>非 void 函数执行流可能走到 <code>}</code>，返回值不确定</td><td>补 <code>return 0;</code></td></tr>
+  <tr><td class="c">2</td><td><code>-Wunused-variable</code></td><td>4:9</td><td>声明后从未使用，通常是重构残留</td><td>删除</td></tr>
+  <tr><td class="c">3</td><td><code>-Wparentheses</code></td><td>7:9</td><td><code>if (y = 5)</code> 是赋值不是判等，条件恒真</td><td>改 <code>y == 5</code></td></tr>
+  <tr><td class="c">4</td><td><code>-Wformat=</code></td><td>8:14</td><td><code>%d</code> 配 <code>char *</code>，64 位平台只取指针低 32 位，输出垃圾值</td><td>改用 <code>%s</code> 或 <code>%d</code> 配整数</td></tr>
+  <tr><td class="c">5</td><td><code>-Wuninitialized</code></td><td>9:12</td><td>读取未初始化变量，值不确定（未定义行为）</td><td>初始化 <code>int x = 0;</code></td></tr>
 </table>
-
-<p>其中第 3、4、5 条最值得注意：它们单独看都是"能编译、能运行"的代码，但都含<span class="mark">未定义行为</span>。例如第 4 条把 <code>char *</code> 当 <code>int</code> 打印，在 64 位平台上会只取指针的低 32 位当整数——这一类错误不会崩溃，只会输出垃圾值，因此<b>必须靠警告发现</b>。这也说明指南为什么特别注明"本例有未定义行为，只用于诊断，禁止链接运行"。</p>
-
-<div class="cap"><b>终端实录 4-2</b>　<code>-Werror</code> 把同一批警告升级为错误，编译失败且不产出目标文件</div>
+<div class="cap"><b>终端实录 4-1</b>　<code>-Werror</code> 把同一批警告升级为错误</div>
 <pre class="term">$ gcc -O1 -Wall -Wextra -Werror -c warn.c -o warn.o
-warn.c:7:9:  error: suggest parentheses around assignment ... [-Werror=parentheses]
-warn.c:8:14: error: format '%d' expects argument of type 'int' ... [-Werror=format=]
-warn.c:4:9:  error: unused variable 'unused' [-Werror=unused-variable]
-warn.c:2:28: error: control reaches end of non-void function [-Werror=return-type]
-warn.c:9:12: error: 'x' is used uninitialized [-Werror=uninitialized]
+warn.c:7:9:  error: ... [-Werror=parentheses]
+warn.c:8:14: error: ... [-Werror=format=]
+warn.c:4:9:  error: ... [-Werror=unused-variable]
+warn.c:2:28: error: ... [-Werror=return-type]
+warn.c:9:12: error: ... [-Werror=uninitialized]
 $ ls warn.o
 warn.o 未生成（-Werror 下编译失败，符合预期）</pre>
-
-<p>注意消息里选项名的变化：<code>-Wparentheses</code> 变成 <code>-Werror=parentheses</code>。这是 GCC 的命名约定——被 <code>-Werror</code> 提升后，错误里会带上"是谁把它变成错误的"。修复后的 <code>warn_fixed.c</code> 在同样选项下<span class="key">零警告、编译通过</span>（<code>exit=0</code>，生成 1007 B 的 <code>.o</code>）。工程上的做法通常是：<span class="key">开发阶段用 <code>-Wall -Wextra</code> 暴露问题，CI 阶段加 <code>-Werror</code> 保证不退化</span>。</p>
+<p>消息里选项名从 <code>-Wparentheses</code> 变成 <code>-Werror=parentheses</code>，标明"是谁把它变成错误的"。其中 3、4、5 条单独看都"能编译能运行"，但都是<span class="mark">未定义行为</span>，不会崩溃只会输出垃圾值，必须靠警告发现——这也是指南注明"本例只用于诊断，禁止链接运行"的原因。修复版 <code>warn_fixed.c</code> 在同样选项下零警告、编译通过。工程做法：开发期用 <code>-Wall -Wextra</code> 暴露问题，CI 期加 <code>-Werror</code> 防退化。</p>
 
 <h2>4.3 实验 3：调试信息</h2>
-<p>同一份 <code>test.c</code> 分别用 <code>-O0</code> 和 <code>-O0 -g</code> 编译，再用同一组 GDB 命令调试，差异非常直接。</p>
-
-<div class="cap"><b>终端实录 4-3</b>　带 <code>-g</code>：可以看到源码行、可以读局部变量</div>
+<div class="cap"><b>终端实录 4-2</b>　同一组 GDB 命令在带 / 不带 <code>-g</code> 下的对比</div>
 <pre class="term">$ gcc -O0 -g test.c -o test_with_gdb.exe
-$ cat gdbcmds.txt
-break main / run / next / next / print x / info locals
 $ gdb --batch -x gdbcmds.txt ./test_with_gdb.exe
 Breakpoint 1 at 0x14000144d: file test.c, line 3.
 Thread 1 hit Breakpoint 1, main () at test.c:3
@@ -733,29 +359,20 @@ Thread 1 hit Breakpoint 1, main () at test.c:3
 4           x += 2;
 8           printf("answer = %d\n", x);
 $1 = 42
-x = 42</pre>
+x = 42
 
-<div class="cap"><b>终端实录 4-4</b>　不带 <code>-g</code>：只有地址，单步直接跑飞，变量不可见</div>
-<pre class="term">$ gcc -O0 test.c -o test_no_gdb.exe
-$ gdb --batch -x gdbcmds2.txt ./test_no_gdb.exe   # 同一组命令
+$ gcc -O0 test.c -o test_no_gdb.exe
+$ gdb --batch -x gdbcmds2.txt ./test_no_gdb.exe
 Breakpoint 1 at 0x14000144d
 Thread 1 hit Breakpoint 1, 0x00007ff60851144d in main ()
 Single stepping until exit from function main,
 which has no line number information.
-0x00007ff6085110c7 in __tmainCRTStartup ()
-[Inferior 1 (process 50028) exited normally]
-gdbcmds2.txt:6: Error in sourced command file:
+...
 No symbol "x" in current context.</pre>
-
-<p>三处差异恰好对应 <code>-g</code> 往目标文件里加的三种信息，并且可以用 <code>objdump -h</code> 直接验证：带 <code>-g</code> 的版本多出 <code>.debug_aranges</code>、<code>.debug_info</code>、<code>.debug_abbrev</code>、<code>.debug_line</code> 等 <b>7 个</b> <code>.debug_*</code> 节，不带的版本为 0 个。</p>
-<ul>
-  <li><span class="key">行号映射</span>：<code>main () at test.c:3</code> 并打印出源码行，来自 <code>.debug_line</code> 的"指令地址 → 源码行"表。</li>
-  <li><span class="key">变量描述</span>：<code>print x</code> 得到 <code>42</code>，来自 <code>.debug_info</code> 的调试信息条目（DWARF），它记录了变量名、类型、以及相对于栈帧的偏移。</li>
-  <li><span class="key">单步行为</span>：没有行号信息时，<code>next</code> 退化为"一直执行到函数返回"，于是直接跑穿了整个 <code>main</code>，还在 <code>__tmainCRTStartup</code> 里停下——这正好印证指南那句"无 <code>-g</code> 不等于完全不能调试"：<b>还能下断点、还能反汇编、还能看寄存器，但看不到源码级信息</b>。</li>
-</ul>
+<p>三处差异对应 <code>-g</code> 加的三种信息，可用 <code>objdump -h</code> 验证：带 <code>-g</code> 的版本多出 <code>.debug_line / .debug_info / .debug_abbrev / .debug_aranges</code> 等 <b>7 个</b> <code>.debug_*</code> 节，不带的为 0。行号映射让断点停在 <code>test.c:3</code> 并打印源码行；变量描述让 <code>print x</code> 得到 42；没有行号信息时 <code>next</code> 退化为"执行到函数返回"，直接跑穿整个 <code>main</code>。无 <code>-g</code> 不等于完全不能调试——还能下断点、反汇编、看寄存器，只是看不到源码级信息。</p>
 
 <h2>4.4 实验 4：预处理宏</h2>
-<div class="cap"><b>终端实录 4-5</b>　<code>-DDEBUG</code> 控制条件编译</div>
+<div class="cap"><b>终端实录 4-3</b>　<code>-DDEBUG</code> 控制条件编译</div>
 <pre class="term">$ gcc -O0 test.c -o test_off.exe &amp;&amp; ./test_off.exe
 answer = 42
 $ gcc -O0 -DDEBUG test.c -o test_on.exe &amp;&amp; ./test_on.exe
@@ -765,49 +382,37 @@ $ strings test_off.exe | grep -c "\[DEBUG\]"
 0
 $ strings test_on.exe | grep -c "\[DEBUG\]"
 1</pre>
-
-<p><code>-DDEBUG</code> 等价于在源文件最前面写 <code>#define DEBUG 1</code>，于是 <code>#ifdef DEBUG</code> 包住的那条 <code>printf</code> 被保留，其余情况被整段删除。<code>strings</code> 的结果给了更硬的证据：<span class="mark">不定义 <code>DEBUG</code> 时，那行调试字符串根本不存在于可执行文件中</span>——它不是"运行时被跳过"，而是"编译时就没有生成"。这与 <code>if (debug) {...}</code> 这类运行期开关有本质区别：后者会留下分支和字符串，前者零开销。</p>
-
-<div class="note">
-  <p class="h">一个容易混淆的点</p>
-  <p><code>-DDEBUG</code> 与 <code>-g</code> 完全不等价，二者作用在不同阶段：<code>-DDEBUG</code> 是<b>预处理阶段的文本开关</b>，决定哪些代码进入编译；<code>-g</code> 是<b>汇编/链接阶段附加的元数据</b>，不改变一行机器码，只让调试器能看懂它。可以同时使用，也可以只用其一。本实验中 <code>test_on.exe</code> 并没有加 <code>-g</code>，它输出调试日志靠的是源码里的宏，与调试信息无关。</p>
-</div>
+<p><code>strings</code> 给了硬证据：不定义 <code>DEBUG</code> 时调试字符串<span class="mark">根本不存在于可执行文件里</span>，不是"运行时被跳过"而是"编译时就没生成"，零开销。<span class="key"><code>-DDEBUG</code> 与 <code>-g</code> 完全不等价</span>：前者是预处理阶段的文本开关，决定哪些代码进入编译；后者只附加元数据，不改变一行机器码。可以同时用，也可以只用其一。</p>
 
 <h2>4.5 结论：按场景选选项</h2>
 <table>
-  <caption>表 4-3　编译选项的选择依据（本实验得到的判据）</caption>
-  <tr><th style="width:22%">场景</th><th style="width:26%">推荐组合</th><th>依据</th></tr>
-  <tr><td>课堂调试、单步定位</td><td><code>-O0 -g -Wall -Wextra</code></td><td><code>-O0</code> 保持源码与指令一一对应，<code>-g</code> 提供行号与变量；<code>-O1</code> 起局部变量会被优化掉，<code>print x</code> 可能失效</td></tr>
-  <tr><td>日常开发构建</td><td><code>-O1 -Wall -Wextra</code></td><td><code>-O1</code> 已能拿到代码段缩减与常量折叠的主要收益；本实验中 <code>-O1</code> 与 <code>-O2</code> 的代码段同为 11 324 B</td></tr>
-  <tr><td>发布 / 性能敏感</td><td><code>-O2</code>（或 <code>-O3</code>，视是否有可向量化循环）</td><td><code>-O2</code> 打开 142 个优化器，本例已把死循环完全消除；<code>-O3</code> 多出的 13 个开关主要服务向量化，无向量化空间时无差别</td></tr>
-  <tr><td>带日志的排障构建</td><td><code>-O2 -DDEBUG</code></td><td>宏开关零开销，可在不引入 <code>-g</code> 体积代价的前提下保留日志代码</td></tr>
-  <tr><td>CI 门禁</td><td><code>-Wall -Wextra -Werror</code></td><td>把 5 类警告全部变成硬性失败，防止未定义行为代码合入</td></tr>
+  <caption>表 4-3　编译选项选择依据（依据本实验数据）</caption>
+  <tr><th style="width:20%">场景</th><th style="width:26%">推荐组合</th><th>依据</th></tr>
+  <tr><td>调试、单步定位</td><td><code>-O0 -g -Wall -Wextra</code></td><td><code>-O0</code> 保持源码与指令对应，<code>-g</code> 提供行号与变量；<code>-O1</code> 起局部变量可能被优化掉</td></tr>
+  <tr><td>日常开发构建</td><td><code>-O1 -Wall -Wextra</code></td><td>本实验中 <code>-O1</code> 已拿到代码段缩减的主要收益，与 <code>-O2</code> 同为 11 324 B</td></tr>
+  <tr><td>发布 / 性能敏感</td><td><code>-O2</code>（有向量化空间再 <code>-O3</code>）</td><td><code>-O2</code> 已消除死循环；<code>-O3</code> 多出的 13 个开关主要服务向量化</td></tr>
+  <tr><td>CI 门禁</td><td><code>-Wall -Wextra -Werror</code></td><td>把 5 类警告变成硬失败，防止未定义行为代码合入</td></tr>
 </table>
-<p>一句话总结本章的取舍：<span class="mark">优化等级越高，机器码越"不像"源码，可诊断性越差；调试信息与警告不改变机器码，却决定问题能不能被发现</span>。真正需要权衡的不是"开不开优化"，而是"在哪一档上，<code>-g</code> 与 <code>-Wall</code> 的信息还够用"。</p>
+<p>一句话：<span class="mark">优化等级越高，机器码越"不像"源码，可诊断性越差；调试信息与警告不改变机器码，却决定问题能不能被发现</span>。</p>
 
 <!-- ================= 第 5 章 ================= -->
 <h1>第 5 章　Lex 工具入门：编写与测试简单的词法分析器</h1>
 
 <h2>5.1 三段式结构与工作流</h2>
-<p>一个 <code>.l</code> 文件由 <code>%%</code> 分成三段：<span class="key">定义段</span>（选项、C 声明、宏、起始条件）、<span class="key">规则段</span>（正规式 + 动作）、<span class="key">用户代码段</span>（被原样拷进生成文件的 C 代码，通常放 <code>main</code>）。Flex 读取它，生成一个 C 源文件 <code>lex.yy.c</code>，里面包含扫描函数 <code>yylex()</code>、当前匹配文本 <code>yytext</code>、匹配长度 <code>yyleng</code>；再交给 <code>gcc</code> 编译成可执行文件。</p>
-
+<p><code>.l</code> 文件由 <code>%%</code> 分成<span class="key">定义段</span>（选项、C 声明）、<span class="key">规则段</span>（正规式 + 动作）、<span class="key">用户代码段</span>（原样拷入生成文件）。Flex 读它生成 <code>lex.yy.c</code>（含 <code>yylex()</code>、<code>yytext</code>、自动机状态表），再编译成可执行识别器。<span class="key">三者的职责</span>：<code>.l</code> 是规则描述，<code>lex.yy.c</code> 是规则的实现，可执行文件才是识别器；改规则只改 <code>.l</code>，直接改 <code>lex.yy.c</code> 会在下次生成时被覆盖。</p>
 <div class="flow">
   <div class="box"><div class="t">demo.l</div><div class="s">三段式源文件</div><div class="s">人写</div></div>
   <div class="arw"><span class="a">flex</span></div>
   <div class="box"><div class="t">lex.yy.c</div><div class="s">扫描器 C 源码</div><div class="s">44 452 B / 生成</div></div>
   <div class="arw"><span class="a">gcc</span></div>
-  <div class="box"><div class="t">demo.exe</div><div class="s">可执行扫描器</div><div class="s">链接运行库</div></div>
+  <div class="box"><div class="t">demo.exe</div><div class="s">可执行扫描器</div></div>
   <div class="arw"><span class="a">运行</span></div>
-  <div class="box"><div class="t">词法单元序列</div><div class="s">INT / ID / KW …</div><div class="s">按输入顺序输出</div></div>
+  <div class="box"><div class="t">词法单元序列</div><div class="s">按输入顺序输出</div></div>
 </div>
-<div class="cap"><b>图 5-1</b>　<code>.l</code> 文件、生成的 C 文件与可执行文件的关系</div>
-
-<p>三者的职责边界必须分清：<span class="key"><code>.l</code> 是"规则描述"，<code>lex.yy.c</code> 是"规则的实现"（包含自动机状态表与驱动代码），可执行文件才是"识别器"</span>。改动规则只改 <code>.l</code>，然后必须重新跑 <code>flex</code> 与 <code>gcc</code>；直接改 <code>lex.yy.c</code> 会在下次生成时被覆盖。</p>
+<div class="cap"><b>图 5-1</b>　<code>.l</code>、生成的 C 文件与可执行文件的关系</div>
 
 <h2>5.2 实验 1：最简整数识别器</h2>
-<p><code>demo.l</code> 只有三条规则：识别连续数字、跳过空白、丢弃其他字符。它完整展示了"生成—编译—运行"的全过程，也让 <code>yytext</code> 和动作代码的写法落到实处。</p>
-
-<div class="cap"><b>终端实录 5-1</b>　<code>demo.l</code> 的生成、编译与运行</div>
+<div class="cap"><b>终端实录 5-1</b>　生成、编译、运行</div>
 <pre class="term">$ flex demo.l
 $ ls -l lex.yy.c
 44452 lex.yy.c
@@ -815,26 +420,18 @@ $ gcc -o demo.exe lex.yy.c
 $ printf '123 hello 456\n' | ./demo.exe
 INT: 123
 INT: 456</pre>
-<p>输出与预期一致。<code>hello</code> 被最后一条 <code>.</code> 规则逐字符丢弃，所以只留下两个整数。这条 <code>.</code> 规则是"兜底"——它保证任何字符都有规则可匹配，否则 Flex 的默认动作是<span class="key">把不匹配的字符原样回显到标准输出</span>，行为会与预期不符。这也是后面两个练习要保留 <code>UNHANDLED</code> 提示的原因。</p>
+<p><code>hello</code> 被兜底规则 <code>.</code> 逐字符丢弃。这条兜底是必要的：没有它，Flex 的默认动作是把不匹配字符原样回显到标准输出，行为会与预期不符。</p>
 
 <h2>5.3 实验 2：多类数字字面量</h2>
-<p>在给定的 <code>numbers.l</code> 框架（原本只跳过空白、其余全部 <code>UNHANDLED</code>）上补写四条数字规则，分别识别十进制、八进制、十六进制整数和简单浮点数。</p>
-
 <table>
-  <caption>表 5-1　<code>numbers.l</code> 的规则设计</caption>
+  <caption>表 5-1　<code>numbers.l</code> 规则设计（在给定框架上补写）</caption>
   <tr><th style="width:26%">正规式</th><th style="width:12%" class="c">标记</th><th>设计理由</th></tr>
-  <tr><td><code>0[xX][0-9a-fA-F]+</code></td><td class="c">HEX</td><td>前缀大小写均可，后接至少一位十六进制数字，同时覆盖 <code>0x1F</code> 与 <code>0X1f</code></td></tr>
-  <tr><td><code>[0-9]+\.[0-9]+</code></td><td class="c">FLOAT</td><td>小数点两侧都强制至少一位数字，天然排除 <code>.5</code> 与 <code>1.</code>，且不含指数部分</td></tr>
-  <tr><td><code>0[0-7]+</code></td><td class="c">OCT</td><td>以 0 开头且后接至少一位 0–7，保证单独的 <code>0</code> 不会被误判为八进制</td></tr>
-  <tr><td><code>0|[1-9][0-9]*</code></td><td class="c">DEC</td><td><b>关键的写法</b>：不用 <code>[0-9]+</code>，因为那样会让 <code>075</code> 同时被 DEC 与 OCT 匹配到等长文本，类别就只好由规则顺序决定</td></tr>
+  <tr><td><code>0[xX][0-9a-fA-F]+</code></td><td class="c">HEX</td><td>前缀大小写均可，后接至少一位十六进制数字</td></tr>
+  <tr><td><code>[0-9]+\.[0-9]+</code></td><td class="c">FLOAT</td><td>小数点两侧强制至少一位数字，天然排除 <code>.5</code> 与 <code>1.</code></td></tr>
+  <tr><td><code>0[0-7]+</code></td><td class="c">OCT</td><td>以 0 开头且后接至少一位 0–7，单独的 <code>0</code> 不会误判为八进制</td></tr>
+  <tr><td><code>0|[1-9][0-9]*</code></td><td class="c">DEC</td><td>不用 <code>[0-9]+</code>：那样 <code>075</code> 会被 DEC 与 OCT 等长匹配，类别只能由顺序决定</td></tr>
 </table>
-
-<div class="note">
-  <p class="h">为什么 DEC 不写成 <code>[0-9]+</code></p>
-  <p>如果 DEC 写成 <code>[0-9]+</code>，那么输入 <code>075</code> 时，DEC 与 OCT 都能匹配 3 个字符，形成<b>等长并列</b>，Flex 只能退回"选靠前的规则"，于是类别取决于书写顺序——这不是我们想要的语义。写成 <code>0|[1-9][0-9]*</code> 后，DEC <b>在正规式层面就无法匹配"以 0 开头的多位数字"</b>，<code>075</code> 只有一个规则能匹配到 3 个字符，歧义在设计阶段就被消除。这是本实验里最值得记住的一条经验：<b>能用正规式表达清楚的地方，不要交给规则顺序去兜底</b>。</p>
-</div>
-
-<div class="cap"><b>终端实录 5-2</b>　主样例：五种输入依次分类</div>
+<div class="cap"><b>终端实录 5-2</b>　主样例（与指南预期一致）</div>
 <pre class="term">$ flex numbers.l &amp;&amp; gcc -o numbers.exe lex.yy.c
 $ printf '123 0x1F 075 3.14 0\n' | ./numbers.exe
 DEC: 123
@@ -842,55 +439,35 @@ HEX: 0x1F
 OCT: 075
 FLOAT: 3.14
 DEC: 0</pre>
-<p>与指南要求的"依次输出 DEC、HEX、OCT、FLOAT、DEC"完全一致。最后一行的 <code>0</code> 被判为 DEC 而不是 OCT，正是 <code>0[0-7]+</code> 要求"至少一位后续数字"的效果。</p>
-
-<h3>边界输入：先预测，再运行</h3>
-<p>指南要求至少自选两组边界输入，且必须先写预测再核对。下面两组我都在纸上写下切分结果后才运行。</p>
-
+<p><b>边界输入：先预测，再运行。</b>两组输入均在纸上写下切分结果后才核对，11 个输入全部与预测一致：</p>
 <table>
-  <caption>表 5-2　第一组边界输入：<code>08 0x .5 -12 007</code></caption>
-  <tr><th style="width:11%" class="c">输入</th><th style="width:30%">预测</th><th style="width:30%">实际输出</th><th class="c">是否一致</th></tr>
-  <tr><td class="c"><code>08</code></td><td>DEC 0、DEC 8（OCT 不成立，因 8 不在 0–7）</td><td>DEC: 0 / DEC: 8</td><td class="c">一致</td></tr>
-  <tr><td class="c"><code>0x</code></td><td>DEC 0、UNHANDLED x（缺十六进制数字）</td><td>DEC: 0 / UNHANDLED: x</td><td class="c">一致</td></tr>
-  <tr><td class="c"><code>.5</code></td><td>UNHANDLED .、DEC 5（FLOAT 要求左侧有数字）</td><td>UNHANDLED: . / DEC: 5</td><td class="c">一致</td></tr>
-  <tr><td class="c"><code>-12</code></td><td>UNHANDLED -、DEC 12（负号不属于数字规则）</td><td>UNHANDLED: - / DEC: 12</td><td class="c">一致</td></tr>
-  <tr><td class="c"><code>007</code></td><td>OCT 007（长度 3 &gt; DEC 的 1）</td><td>OCT: 007</td><td class="c">一致</td></tr>
-</table>
-
-<table>
-  <caption>表 5-3　第二组边界输入：<code>0X1f 1. 1.2.3 0000 0x1G 12abc</code></caption>
-  <tr><th style="width:12%" class="c">输入</th><th style="width:31%">预测</th><th style="width:33%">实际输出</th><th class="c">是否一致</th></tr>
-  <tr><td class="c"><code>0X1f</code></td><td>HEX（大写前缀 + 小写数字位）</td><td>HEX: 0X1f</td><td class="c">一致</td></tr>
-  <tr><td class="c"><code>1.</code></td><td>DEC 1、UNHANDLED .（右小数点后无数字）</td><td>DEC: 1 / UNHANDLED: .</td><td class="c">一致</td></tr>
+  <caption>表 5-2　边界输入的预测与实际（第一组 / 第二组）</caption>
+  <tr><th style="width:11%" class="c">输入</th><th style="width:26%">预测</th><th style="width:30%">实际输出</th><th class="c">结论</th></tr>
+  <tr><td class="c"><code>08</code></td><td>DEC 0、DEC 8（8 不在 0–7）</td><td>DEC: 0 / DEC: 8</td><td class="c">一致</td></tr>
+  <tr><td class="c"><code>0x</code></td><td>DEC 0、UNHANDLED x</td><td>DEC: 0 / UNHANDLED: x</td><td class="c">一致</td></tr>
+  <tr><td class="c"><code>.5</code></td><td>UNHANDLED .、DEC 5</td><td>UNHANDLED: . / DEC: 5</td><td class="c">一致</td></tr>
+  <tr><td class="c"><code>-12</code></td><td>UNHANDLED -、DEC 12</td><td>UNHANDLED: - / DEC: 12</td><td class="c">一致</td></tr>
+  <tr><td class="c"><code>007</code></td><td>OCT 007（3 &gt; DEC 的 1）</td><td>OCT: 007</td><td class="c">一致</td></tr>
+  <tr><td class="c"><code>0X1f</code></td><td>HEX</td><td>HEX: 0X1f</td><td class="c">一致</td></tr>
+  <tr><td class="c"><code>1.</code></td><td>DEC 1、UNHANDLED .</td><td>DEC: 1 / UNHANDLED: .</td><td class="c">一致</td></tr>
   <tr><td class="c"><code>1.2.3</code></td><td>FLOAT 1.2、UNHANDLED .、DEC 3</td><td>FLOAT: 1.2 / UNHANDLED: . / DEC: 3</td><td class="c">一致</td></tr>
-  <tr><td class="c"><code>0000</code></td><td>OCT 0000（首位 0，其余全在 0–7）</td><td>OCT: 0000</td><td class="c">一致</td></tr>
-  <tr><td class="c"><code>0x1G</code></td><td>HEX 0x1、UNHANDLED G（G 非十六进制位）</td><td>HEX: 0x1 / UNHANDLED: G</td><td class="c">一致</td></tr>
-  <tr><td class="c"><code>12abc</code></td><td>DEC 12、UNHANDLED a b c</td><td>DEC: 12 / UNHANDLED: a / UNHANDLED: b / UNHANDLED: c</td><td class="c">一致</td></tr>
+  <tr><td class="c"><code>0000</code></td><td>OCT 0000</td><td>OCT: 0000</td><td class="c">一致</td></tr>
+  <tr><td class="c"><code>0x1G</code></td><td>HEX 0x1、UNHANDLED G</td><td>HEX: 0x1 / UNHANDLED: G</td><td class="c">一致</td></tr>
+  <tr><td class="c"><code>12abc</code></td><td>DEC 12、UNHANDLED a b c</td><td>DEC: 12 / UNHANDLED: a b c</td><td class="c">一致</td></tr>
 </table>
-
-<p>十一个边界输入全部预测正确，但结论不能停在"猜对了"。这几组输入真正揭示的是<span class="mark">扫掠式识别的本质</span>：</p>
-<ol>
-  <li><span class="key">局部匹配不等于整体合法</span>。<code>08</code> 被切成 <code>0</code> 和 <code>8</code> 两个 DEC，程序"成功识别了"，但 <code>08</code> 这个整体既不是合法八进制也不是合法十进制。<code>12abc</code> 同理。指南要求"不能把若干局部匹配当作整个数字合法"，指的正是这种情况。<span class="key">词法分析器只负责切分，合法性判断要靠后继阶段</span>。</li>
-  <li><span class="key"><code>.5</code> 与 <code>1.</code> 的不对称，是规则设计的结果，不是 bug</span>。因为我按指南把"简单浮点数"定义为小数点两侧都有数字，所以这两个输入各自只完成一半匹配。如果允许 <code>.5</code> 或 <code>1.</code> 成立，正规式要改成 <code>[0-9]*\.[0-9]+</code> 之类，会与"小数点两侧均有数字"的要求冲突。</li>
-  <li><span class="key">负号必须由独立的运算符规则处理</span>。<code>-12</code> 中被切出的 <code>-</code> 是 <code>UNHANDLED</code>，因为 <code>numbers.l</code> 没有定义运算符。若真的加上负号识别，正确做法是让 <code>-</code> 成为独立的运算符记号，而不是把它并进数字规则——否则 <code>a-12</code> 这类表达式会被切错。</li>
-</ol>
+<p>边界组真正揭示的是扫掠式识别的本质：<span class="key">局部匹配不等于整体合法</span>——<code>08</code> 被切成两个 DEC，但 <code>08</code> 这个整体既非合法八进制也非合法十进制；<code>12abc</code> 同理。词法分析器只负责切分，合法性要靠后继阶段。<span class="key">负号必须由独立的运算符规则处理</span>，并入数字规则会让 <code>a-12</code> 这类表达式切错；<code>.5</code>/<code>1.</code> 的不对称是"小数点两侧均有数字"这条规则设计的结果，不是缺陷。</p>
 
 <h2>5.4 实验 3：关键字、标识符与整数</h2>
-<p><code>mini_c.l</code> 要组织三类规则，并按输入顺序连续输出。规则本身很朴素，真正的观察点在<span class="mark">规则之间的相互作用</span>。</p>
-
 <table>
-  <caption>表 5-4　<code>mini_c.l</code> 的规则组织（原始顺序）</caption>
-  <tr><th style="width:10%" class="c">顺序</th><th style="width:34%">正规式</th><th style="width:12%" class="c">标记</th><th>说明</th></tr>
-  <tr><td class="c">1</td><td><code>int|if|while</code></td><td class="c">KW</td><td>关键字，文本固定</td></tr>
-  <tr><td class="c">2</td><td><code>[A-Za-z_][A-Za-z_0-9]*</code></td><td class="c">ID</td><td>字母或下划线开头，后接零个或多个字母/数字/下划线</td></tr>
+  <caption>表 5-3　<code>mini_c.l</code> 规则组织（原始顺序）</caption>
+  <tr><th style="width:10%" class="c">顺序</th><th style="width:36%">正规式</th><th style="width:12%" class="c">标记</th><th>说明</th></tr>
+  <tr><td class="c">1</td><td><code>int|if|while</code></td><td class="c">KW</td><td>关键字</td></tr>
+  <tr><td class="c">2</td><td><code>[A-Za-z_][A-Za-z_0-9]*</code></td><td class="c">ID</td><td>字母或下划线开头</td></tr>
   <tr><td class="c">3</td><td><code>[0-9]+</code></td><td class="c">INT</td><td>十进制整数</td></tr>
-  <tr><td class="c">4</td><td><code>[ \t\r\n]+</code></td><td class="c">—</td><td>跳过空白</td></tr>
-  <tr><td class="c">5</td><td><code>.</code></td><td class="c">UNHANDLED</td><td>保留未处理字符提示</td></tr>
+  <tr><td class="c">4</td><td><code>[ \t\r\n]+</code>　<code>.</code></td><td class="c">—</td><td>跳过空白；其余 <code>UNHANDLED</code></td></tr>
 </table>
-
 <div class="cap"><b>终端实录 5-3</b>　主样例与最长匹配反例</div>
-<pre class="term">$ flex mini_c.l &amp;&amp; gcc -o mini_c.exe lex.yy.c
-$ printf 'int integer if ifx while while2 _x 42\n' | ./mini_c.exe
+<pre class="term">$ printf 'int integer if ifx while while2 _x 42\n' | ./mini_c.exe
 KW: int
 ID: integer
 KW: if
@@ -906,89 +483,48 @@ ID: if_
 ID: while9
 INT: 42
 ID: x</pre>
-<p>主样例的八个单元全部符合预期。<code>integer</code> 被整体识别为 <code>ID</code> 而不是 <code>KW: int</code> 加 <code>ID: eger</code>，原因是标识符规则能匹配 7 个字符，关键字规则只能匹配 3 个——<span class="key">最长匹配优先作用于"所有规则"而不只是"当前规则"</span>。<code>intx</code>、<code>if_</code>、<code>while9</code> 三个反例进一步说明：只要标识符规则匹配得更长，关键字就抢不走前缀。<code>42x</code> 则展示了另一端：<code>INT</code> 吃掉 <code>42</code>，剩下 <code>x</code> 再作为一个 <code>ID</code>，没有"数字标识符"这种混合体。</p>
-
-<h3>交换规则顺序</h3>
-<p>把第 1、2 条规则的位置对调，其余不动，重新生成、编译、运行：</p>
-
+<p><code>integer</code> 整体识别为 <code>ID</code> 而非 <code>KW: int</code> + <code>ID: eger</code>，因为标识符规则匹配 7 个字符，关键字只有 3 个——<span class="key">最长匹配作用于所有规则</span>。<code>intx / if_ / while9</code> 三个反例进一步说明：只要标识符规则匹配更长，关键字就抢不走前缀。</p>
 <table>
-  <caption>表 5-5　规则顺序调整前后的对比</caption>
-  <tr><th style="width:14%" class="c">输入</th><th style="width:16%" class="c">关键字在前</th><th style="width:16%" class="c">标识符在前</th><th>变化原因</th></tr>
-  <tr><td class="c"><code>int</code></td><td class="c">KW: int</td><td class="c">ID: int</td><td><b>变了</b>。两条规则都匹配 3 个字符，等长时取靠前者</td></tr>
-  <tr><td class="c"><code>integer</code></td><td class="c">ID: integer</td><td class="c">ID: integer</td><td>不变。ID 匹配 7 个字符更长，与顺序无关</td></tr>
-  <tr><td class="c"><code>if</code></td><td class="c">KW: if</td><td class="c">ID: if</td><td><b>变了</b>，同 <code>int</code></td></tr>
-  <tr><td class="c"><code>ifx</code></td><td class="c">ID: ifx</td><td class="c">ID: ifx</td><td>不变。ID 匹配 3 个字符，KW 只有 2 个</td></tr>
-  <tr><td class="c"><code>while2</code></td><td class="c">ID: while2</td><td class="c">ID: while2</td><td>不变，同 <code>ifx</code></td></tr>
+  <caption>表 5-4　交换关键字与标识符规则顺序后的对比</caption>
+  <tr><th style="width:14%" class="c">输入</th><th style="width:16%" class="c">关键字在前</th><th style="width:16%" class="c">标识符在前</th><th>原因</th></tr>
+  <tr><td class="c"><code>int</code></td><td class="c">KW: int</td><td class="c">ID: int</td><td><b>变了</b>：等长并列，取靠前者</td></tr>
+  <tr><td class="c"><code>integer</code></td><td class="c">ID: integer</td><td class="c">ID: integer</td><td>不变：ID 匹配更长，与顺序无关</td></tr>
+  <tr><td class="c"><code>ifx</code></td><td class="c">ID: ifx</td><td class="c">ID: ifx</td><td>不变：3 &gt; 2</td></tr>
+  <tr><td class="c"><code>while2</code></td><td class="c">ID: while2</td><td class="c">ID: while2</td><td>不变：同上</td></tr>
 </table>
-
-<div class="cap"><b>终端实录 5-4</b>　交换顺序后 Flex 的额外警告</div>
+<div class="cap"><b>终端实录 5-4</b>　交换顺序后 Flex 的静态诊断</div>
 <pre class="term">$ win_flex mini_c_swapped.l
 mini_c_swapped.l:7: warning, rule cannot be matched
 $ printf 'int integer if ifx while while2 _x 42\n' | ./mini_c_swapped.exe
-ID: int
-ID: integer
-ID: if
-ID: ifx
-ID: while
-ID: while2
-ID: _x
-INT: 42</pre>
-<p>这个 <code>warning, rule cannot be matched</code> 是本实验最有价值的副产品：它说明<span class="mark">交换之后关键字规则已经彻底不可达</span>——任何能被 <code>int|if|while</code> 匹配的文本，都必然也能被前面的标识符规则匹配到同样长度，而等长时后者永远优先。Flex 在生成阶段就能静态发现这一点，这本身就是"规则集合被编译成自动机"的一个证据：只有在自动机层面比较过规则的覆盖关系，才可能给出这种诊断。</p>
+ID: int / ID: integer / ID: if / ID: ifx / ID: while / ID: while2 / ID: _x / INT: 42</pre>
+<p><code>warning, rule cannot be matched</code> 说明交换后关键字规则已彻底不可达——任何能被它匹配的文本都能被前面的标识符规则匹配到同样长度。Flex 能在生成阶段静态发现这一点，本身就是"规则集合被编译成自动机"的证据。</p>
 
 <h2>5.5 最长匹配与等长规则优先级</h2>
-<p>Flex 的选择规则可以精确地写成两句：</p>
-<ol>
-  <li><span class="key">最长匹配优先</span>：在所有能匹配当前位置的规则中，选匹配文本最长的那一条。这与规则书写顺序无关。</li>
-  <li><span class="key">等长时取靠前者</span>：若多条规则匹配到同样长的文本，选在 <code>.l</code> 文件中出现得更早的那一条。</li>
-</ol>
-
-<table>
-  <caption>表 5-6　两条规则与本次实验中的判定实例</caption>
-  <tr><th style="width:22%">规则</th><th style="width:26%">本次实验中的实例</th><th>若违反这条规则会怎样</th></tr>
-  <tr><td>最长匹配</td><td><code>integer</code> → <code>ID: integer</code>（7 &gt; 3）；<code>ifx</code> → <code>ID: ifx</code>（3 &gt; 2）；<code>075</code> → <code>OCT: 075</code>（3 &gt; 1）</td><td>若按"先匹配到就返回"，<code>integer</code> 会被切成 <code>KW: int</code> + <code>ID: eger</code>，标识符就永远无法被正确识别</td></tr>
-  <tr><td>等长优先</td><td><code>int</code> → <code>KW: int</code>（两条规则都是 3 个字符，关键字在写前面）</td><td>若反过来把 ID 写在前面，关键字会在编译期全部退化为标识符（即终端实录 5-4 的结果）</td></tr>
-</table>
-
-<p>指南要求"给出一个自测反例"，我用的是 <code>intx</code>：它同时是"关键字前缀 + 后缀"的形式，若实现采用"先试关键字、成功即返回"的策略，就会被切成 <code>KW: int</code> 与 <code>ID: x</code>；实际输出是 <code>ID: intx</code>，说明最长匹配确实在所有规则之间统一比较。<span class="key">另一个方向的反例是 <code>int</code> 本身</span>：它无法用长度区分，只能靠顺序——这就是为什么所有 C 风格词法分析器都把关键字规则写在标识符规则之前。</p>
+<p>Flex 的选择规则可精确写成两句：<span class="key">最长匹配优先</span>（在所有能匹配当前位置的规则中选文本最长的，与书写顺序无关）；<span class="key">等长时取靠前者</span>。自测反例是 <code>intx</code>：若实现采用"先试关键字、成功即返回"，会切成 <code>KW: int</code> + <code>ID: x</code>；实际输出 <code>ID: intx</code>，证明最长匹配在所有规则间统一比较。另一方向的反例是 <code>int</code> 本身：它无法用长度区分，只能靠顺序——这就是所有 C 风格词法分析器都把关键字规则写在标识符之前的原因。</p>
 
 <h2>5.6 从正规式到自动机</h2>
-<p>本实验只要求理解"正规式用于描述词法规则，Flex 借助自动机完成识别"这一层关系，具体构造算法留给项目 2。不过 <code>lex.yy.c</code> 里已经能看到不少线索：生成文件中有 <code>yy_accept[]</code> 这样一张<span class="key">状态接受表</span>，以及 <code>yy_current_state</code> 的状态转移驱动循环。</p>
-
-<div class="cap"><b>终端实录 5-5</b>　生成文件中与自动机有关的结构</div>
+<div class="cap"><b>终端实录 5-5</b>　生成文件中的自动机结构</div>
 <pre class="term">$ grep -n "yy_accept\[" lex.yy.c | head -2
 366:static const flex_int16_t yy_accept[20] =
 696:            if ( yy_accept[yy_current_state] )</pre>
-
-<p>这段代码透露的实现方式可以概括为：<span class="mark">每条正规式先被转换成 NFA，多条规则合并成一个 NFA，再确定化为 DFA，最后把 DFA 压缩成两张表——转移表与接受表</span>。<code>yy_accept[state]</code> 给出"到达该状态时接受哪条规则"，第 696 行那句判断正是"如果当前状态是接受态，就记下它（<span class="key">以便继续往后试更长的匹配</span>）"。这恰好解释了最长匹配是怎么实现的：<span class="key">扫描时不断前进，把最近一次遇到的接受态记下来；走到不能再走时，回退到那个接受态并按对应规则执行动作</span>。所谓"最长"，在实现上就是"最后一次能接受的位置"。</p>
-<p>这也解释了为什么 <code>numbers.l</code> 里 DEC 写成 <code>0|[1-9][0-9]*</code> 比写成 <code>[0-9]+</code> 更稳妥：前者让自动机在读完 <code>0</code> 之后对"下一位是数字"这件事不再有接受路径，后者会造出一条与 OCT 并行的长路径，两个接受态指向不同规则，最终只能靠规则编号（即书写顺序）打破平局。项目 2 会亲手做 Thompson 构造与子集构造，那时这张表将被完整地推导一遍。</p>
+<p>正规式先转成 NFA，多条规则合并后再确定化为 DFA，最后压成转移表与接受表；<code>yy_accept[state]</code> 给出"到达该状态时接受哪条规则"，第 696 行的判断是"若当前状态是接受态就记下来，以便继续试更长的匹配"。最长匹配在实现上就是<span class="mark">不断前进，把最近一次遇到的接受态记下来，走到不能再走时回退到该位置</span>。这也解释了 5.3 节的设计：<code>0|[1-9][0-9]*</code> 让自动机读完 <code>0</code> 之后对"下一位是数字"不再有接受路径，不会与 OCT 造出两个等长接受态。具体构造算法（Thompson 构造、子集化）在项目 2 中学习。</p>
 
 <!-- ================= 第 6 章 ================= -->
 <h1>第 6 章　思政融合：国产编译器调研</h1>
 
 <h2>6.1 调研对象</h2>
-<p>本次调研选择<b>华为毕昇编译器（BiSheng Compiler）</b>。按 openEuler 软件包仓库的官方描述，它是"华为编译器实验室针对鲲鹏等通用处理器架构场景，打造的一款高性能、高可信及易扩展的编译器工具链"，通过增强和引入多种编译优化技术，为 ARM 服务器平台提供从源码到二进制的完整编译能力<sup>[1]</sup>。选择它的理由很直接：它是国内少数已经进入主流 Linux 发行版软件源、可以被普通用户 <code>yum install</code> 下来直接使用的自研编译器，而不是停留在发布会上的概念产品。</p>
+<p>本次调研选择<b>华为毕昇编译器（BiSheng Compiler）</b>。按 openEuler 软件包仓库的官方描述，它是"华为编译器实验室针对鲲鹏等通用处理器架构场景，打造的一款高性能、高可信及易扩展的编译器工具链"<sup>[1]</sup>。选择它的理由很直接：它是国内少数已进入主流 Linux 发行版软件源、能被普通用户 <code>yum install</code> 下来直接使用的自研编译器，而非停留在发布会上的概念产品。</p>
 
 <h2>6.2 关键发现</h2>
+<p><b>支持语言与前端组成。</b>毕昇不自己发明语言，而是复用 LLVM 生态：C/C++ 交由 <b>Clang</b> 完成词法、语法、语义分析与 LLVM IR 生成并兼任驱动，Fortran 交由 <b>Flang</b>（由 <code>flang1</code> 与 <code>flang2</code> 两个组件构成）<sup>[1]</sup>。这与第 2 章看到的 GCC 结构形成对照：GCC 的 <code>cc1</code> 是高度集成的单体程序，LLVM 系前端则按库拆分。</p>
+<p><b>目标架构。</b>官方文档把"架构"一栏写死为 <b>AArch64</b>，软件源路径为 <code>repo.oepkgs.net/bisheng/aarch64/</code><sup>[1]</sup>——它的定位不是通用跨平台编译器，而是面向 ARM 服务器、特别是鲲鹏处理器的深度定制。鲲鹏社区的文章印证了这条路线：面向 x86 迁移到鲲鹏的场景，华为提供毕昇编译器、毕昇 JDK、GCC for openEuler 三件套，分别对应高性能计算、Java 业务与通用场景<sup>[2]</sup>。</p>
+<p><b>工具链组成。</b>编译 C/C++ 用 <code>clang</code>/<code>clang++</code>，Fortran 用 <code>flang</code>；链接默认调系统 <code>ld</code>，可用 <code>-fuse-ld=lld</code> 换成 LLVM 的 <b>lld</b><sup>[1]</sup>——编译器与链接器解耦，与第 3.6 节 <code>-###</code> 看到的 <code>collect2 → ld</code> 是同一套分工。openEuler 已把它收进官方源，<code>yum install bisheng-compiler</code> 即装。</p>
+<p><b>一项有来源支持的技术特征。</b>官方表述为："除 LLVM 通用功能和优化外，毕昇编译器的工具链对中端及后端的关键技术点进行了深度优化，并集成 Auto-tuner 特性支持编译器自动调优"<sup>[1]</sup>。两个可核查点：优化发生在<b>中端（IR 层）与后端（目标代码层）</b>，与第 4 章观察到的 <code>-O1</code> 常量折叠、<code>-O2</code> 死代码消除属同一层级；<b>Auto-tuner</b> 靠反复编译、运行基准并测量来自动搜索编译参数，本质上是把第 4 章"按场景选选项"那张表交给机器迭代。性能方面，鲲鹏社区口径为 SPEC CPU 2017 相比开源 GCC 9.3 提升约 25%<sup>[2]</sup>——这是厂商公布的测法，不宜直接外推到自己手上的程序。</p>
 
-<h3>（1）支持语言：C / C++ / Fortran 三线并行</h3>
-<p>毕昇编译器不自己发明语言，而是复用 LLVM 生态的前端：C 与 C++ 交由 <b>Clang</b> 完成词法、语法、语义分析与 LLVM IR 生成，同时 Clang 兼任驱动程序；Fortran 交由 <b>Flang</b> 完成，官方文档特别指出 Flang 由 <code>flang1</code> 与 <code>flang2</code> 两个组件构成，同样是"把源码转成 LLVM IR"的驱动<sup>[1]</sup>。这一点与我在第 2 章看到的 GCC 结构形成了有趣的对照：GCC 的 C 前端 <code>cc1</code> 是一个高度集成的单体程序，而 LLVM 系的前端是按库拆分的。</p>
-
-<h3>（2）目标架构：以 AArch64 / 鲲鹏为主战场</h3>
-<p>官方安装文档把"架构"一栏直接写死为 <b>AArch64</b>，软件源路径也是 <code>repo.oepkgs.net/bisheng/aarch64/</code><sup>[1]</sup>。这说明毕昇的定位不是"通用跨平台编译器"，而是<b>面向 ARM 服务器、特别是鲲鹏处理器的深度定制</b>。鲲鹏社区的文章也印证了这条路线：面向 x86 迁移到鲲鹏的场景，华为提供毕昇编译器、毕昇 JDK、GCC for openEuler 三件套，分别对应高性能计算、Java 业务和通用场景<sup>[2]</sup>。</p>
-
-<h3>（3）工具链组成：驱动 + 前端 + 链接器，全部可替换</h3>
-<p>编译 C/C++ 用 <code>clang</code> / <code>clang++</code>，编译 Fortran 用 <code>flang</code>；链接默认调用系统 <code>ld</code>，但可以通过 <code>-fuse-ld=lld</code> 换成 LLVM 自己的 <b>lld</b><sup>[1]</sup>。这个细节值得注意——<b>编译器和链接器是解耦的</b>，这与我在 3.6 节用 <code>-###</code> 看到的 <code>collect2 → ld</code> 是同一套分工思路。安装方式上，openEuler 已把毕昇收进官方源，<code>yum install bisheng-compiler</code> 即可；非 openEuler 系统则通过新增 <code>bisheng-compiler.repo</code> 的方式接入<sup>[1]</sup>。</p>
-
-<h3>（4）一项有来源支持的技术特征：中后端深度优化 + Auto-tuner</h3>
-<p>官方文档的表述是："除 LLVM 通用功能和优化外，毕昇编译器的工具链对中端及后端的关键技术点进行了深度优化，并集成 Auto-tuner 特性支持编译器自动调优"<sup>[1]</sup>。这里有两个可核查的点：其一，优化发生在<b>中端（IR 层）与后端（目标代码层）</b>，而不是只在前端做语法层面的把戏——这与第 4 章观察到的 <code>-O1</code> 常量折叠、<code>-O2</code> 死代码消除属于同一层级的工作；其二，<b>Auto-tuner 是一种"自动搜索编译参数"的机制</b>，它需要反复编译、运行基准程序并测量，本质上把"人工试 <code>-O2</code> 还是 <code>-O3</code>、要不要开某个 <code>-march</code>"这件事交给机器迭代。这正是第 4 章那张"按场景选选项"表格的自动化版本。</p>
-<p>性能方面，鲲鹏社区的对比口径是：在 SPEC CPU 2017 测试中，毕昇编译器相比开源 GCC 9.3 性能提升约 25%，在 WRF、CUACE 等专业应用中提升约 10%<sup>[2]</sup>。需要说明，这是<b>厂商公布的测法</b>，测试平台、基线与编译选项都以对方口径为准，不宜直接外推到自己手上的程序。</p>
-
-<h2>6.3 我的思考：从"用工具"到"想工具"</h2>
-<p>做完项目 1 再回头看毕昇，最强烈的感受是<span class="mark">"四阶段"这套骨架是跨编译器的通用语言</span>。<code>clang -E</code>、<code>clang -S</code>、<code>clang -c</code> 与 GCC 的同名选项语义一致，因为二者都是"驱动程序 + 前端 + 优化器 + 后端 + 汇编器 + 链接器"的结构，只是前端实现方式不同。这意味着我在第 3 章学到的观察方法——用 <code>-E</code> 看宏展开、用 <code>-S</code> 看指令、用 <code>nm</code> 看符号、用 <code>objdump -r</code> 看重定位——换成任何一款类 LLVM 的编译器都仍然有效。工具会换，方法论不会。</p>
-<p>更值得记住的是差异背后的原因。<b>GCC 的 <code>cc1</code> 是单体可执行文件，Clang 是库化的</b>：<code>libclang</code> 可以被 IDE、静态分析器、代码补全工具直接调用，所以你会看到 VS Code、CLion 都能读懂 C++ 而不仅仅是"调用编译器"。这解释了为什么 LLVM 生态在工具化、可复用性上扩张得这么快，也解释了国产编译器为什么普遍选择"基于 LLVM 深度定制"而不是"从零写一个 GCC"——<span class="key">站在成熟的开源基础设施上做增量创新，是更现实的技术路线</span>。</p>
-<p>局限同样清楚。第一，<b>架构绑定</b>：官方文档把架构限定为 AArch64，意味着在 x86 开发机上无法直接使用，迁移成本落在"有没有 ARM 机器"这一步。第二，<b>生态依赖</b>：它需要系统已有的 GCC（≥4.8.5）、glibc（≥2.17）、libstdc++（≥6）、libatomic（≥1.2）作为地基<sup>[1]</sup>，并不是完全自包含的工具链——这既是优势（与系统 ABI 天然兼容），也意味着它无法脱离 Linux 发行版的包管理体系独立存在。第三，<b>调优的时间成本</b>：Auto-tuner 靠反复编译测量来收敛，对"一天构建几十次"的开发流程并不友好，更适合发布前的最终构建。</p>
-<p>关于"一次可复现体验"，我设计了如下步骤，作为后续在鲲鹏环境上的验证方案（本机为 x86_64 Windows，无法直接执行）：在 openEuler AArch64 机器上执行 <code>yum install bisheng-compiler</code>，用 <code>clang -v</code> 确认版本；然后对项目 1 的 <code>hello.c</code> 分别执行 <code>clang -E</code>、<code>clang -S</code>、<code>clang -c</code>，把三份产物与本次 GCC 的 <code>hello.i</code>、<code>hello.s</code>、<code>hello.o</code> 并排比较：预期会在 <code>.i</code> 的行标记格式、<code>.s</code> 的伪指令（GCC 用 <code>.seh_*</code>，Clang 风格不同）、<code>.o</code> 的节名与符号修饰上看到差异，但四个阶段的划分、<code>nm</code> 中 <code>T</code>/<code>U</code> 的含义、<code>objdump -r</code> 的重定位项应当保持一致。<b>如果这三条一致，就说明"四阶段"确实是工具链层面的客观结构，而不是某一家编译器的实现细节。</b></p>
-<p>还有一点体会来自"编译器为什么是基础软件"。第 4 章里，同一段循环在 <code>-O0</code> 下要跑 11 ms，在 <code>-O2</code> 下被彻底消除——<b>编译器不动一行源码，就能决定程序的性能上限</b>。把这个尺度放大到一个数据中心、一座超算集群，编译器的差距就是电费、机时和能耗的差距。这大概就是"卡脖子"三个字在编译领域的具象含义：它不在应用层，而在所有人都站在上面的那一层。</p>
+<h2>6.3 我的思考</h2>
+<p>做完项目 1 再看毕昇，最直接的感受是<span class="mark">"四阶段"是跨编译器的通用语言</span>：<code>clang -E/-S/-c</code> 与 GCC 同名选项语义一致，因为二者都是"驱动 + 前端 + 优化器 + 后端 + 汇编器 + 链接器"的结构。第 3 章学到的观察方法——<code>-E</code> 看宏展开、<code>-S</code> 看指令、<code>nm</code> 看符号、<code>objdump -r</code> 看重定位——换任何一款类 LLVM 编译器都仍然有效。工具会换，方法论不会。</p>
+<p>差异背后的原因更值得记。<b>GCC 的 <code>cc1</code> 是单体可执行文件，Clang 是库化的</b>：<code>libclang</code> 可被 IDE、静态分析器直接调用，这是 LLVM 生态在工具化方向扩张快的原因，也解释了国产编译器为何普遍选"基于 LLVM 深度定制"而非"从零写一个 GCC"——<span class="key">站在成熟的开源基础设施上做增量创新，是更现实的技术路线</span>。局限同样清楚：架构绑定 AArch64，x86 开发机用不了；依赖系统已有的 GCC（≥4.8.5）、glibc（≥2.17）、libstdc++（≥6）<sup>[1]</sup>，并非自包含工具链；Auto-tuner 靠反复编译测量收敛，更适合发布前的最终构建而非日常开发。</p>
+<p>关于"一次可复现体验"，我设计了如下验证方案（本机为 x86_64 Windows，无法直接执行）：在 openEuler AArch64 上安装毕昇后，对同一份 <code>hello.c</code> 分别执行 <code>clang -E/-S/-c</code>，与本次 GCC 的三份产物并排比较——预期 <code>.i</code> 行标记格式、<code>.s</code> 伪指令（GCC 用 <code>.seh_*</code>）、<code>.o</code> 节名与符号修饰会有差异，但四个阶段的划分、<code>nm</code> 中 <code>T</code>/<code>U</code> 的含义、重定位项应当一致。<b>若一致，即证明"四阶段"是工具链层面的客观结构，而非某一家编译器的实现细节。</b>编译器为什么是基础软件，第 4 章也给了具象答案：同一段循环 <code>-O0</code> 下 11 ms、<code>-O2</code> 下被彻底消除——编译器不动一行源码，就决定了程序的性能上限；把尺度放大到一座超算集群，这个差距就是电费与机时。</p>
 
 <h2>6.4 参考文献</h2>
 <div class="refs">
@@ -1001,90 +537,30 @@ INT: 42</pre>
 <!-- ================= 第 7 章 ================= -->
 <h1>第 7 章　综合反思</h1>
 
-<h2>7.1 最有趣的环节：<code>-O1</code> 留下的那个空循环</h2>
-<p>如果只能留一个发现，我会留 4.1 节那个：<code>-O1</code> 已经把 <code>sum</code> 折叠成常量 <code>100000000000000</code>，却仍然保留了 <code>subq $1, %rax / jne .L2</code> 这样一对空的计数指令，导致"算术都不做了，计时还有 3 毫秒"。它推翻了我原先"优化等级是一个单调的滑杆"的直觉——真实情况是<span class="mark">一组彼此独立的变换，各自有不同的触发条件</span>。常量折叠在 <code>-O1</code> 就会发生，而死循环消除要等到 <code>-O2</code>。这也让我第一次具体地理解了"半优化状态"为什么不安全：既丢了可调试性，又没拿到性能。</p>
+<h2>7.1 最有趣的环节</h2>
+<p><code>-O1</code> 已经把 <code>sum</code> 折叠成常量，却留下了执行 1000 万次的空计数循环（4.1 节），于是"算术都不做了，计时还有 3 毫秒"。它推翻了"优化等级是单调滑杆"的直觉——真实情况是一组彼此独立的变换，各自有不同触发条件：<span class="mark">常量折叠 <code>-O1</code> 就做，死循环消除要等 <code>-O2</code></span>。<code>-O1</code> 的"半优化状态"最需要警惕：既丢了可调试性，又没拿到性能。</p>
 
-<h2>7.2 最大的收获：把"编译"从一个词拆成了一条流水线</h2>
-<p>做实验之前，"编译"对我是一个不可分割的动作；做完之后，它变成了五样东西、四个阶段、两个关键机制（符号解析与重定位）。最实用的三个收获是：</p>
-<ol>
-  <li><span class="key">出错时先判断"错在哪个阶段"</span>。语法错带行列号、发生在编译期；<code>undefined reference</code> 发生在链接期，报的是目标文件名而不是源文件名。这个区分能省掉大量无谓的排查——我原来会去检查 <code>#include</code>，现在会先看它是 <code>.c</code> 还是 <code>.o</code>。</li>
-  <li><span class="key"><code>-###</code> 是理解工具链最快的入口</span>。与其去背"四阶段"，不如看一眼它实际调了哪几个程序、临时文件怎么命名。这一条对以后接触任何新编译器都适用。</li>
-  <li><span class="key">能交给正规式解决的歧义，不要留给规则顺序</span>。5.3 节把 DEC 写成 <code>0|[1-9][0-9]*</code> 而不是 <code>[0-9]+</code>，效果是把"<code>075</code> 算 DEC 还是 OCT"这个顺序依赖问题在源头消除了。这条经验不只用于 Flex。</li>
-</ol>
+<h2>7.2 最大收获</h2>
+<p>"编译"从一个词变成了一条流水线：五样文件、四个阶段、符号解析与重定位两个机制。三条最实用的经验——出错先判断错在哪个阶段（语法错带行列号发生在编译期，<code>undefined reference</code> 报的是目标文件名，发生在链接期）；<code>-###</code> 是理解工具链最快的入口；<span class="key">能交给正规式表达的歧义，不要留给规则顺序兜底</span>（DEC 写成 <code>0|[1-9][0-9]*</code> 而非 <code>[0-9]+</code>，把"<code>075</code> 算 DEC 还是 OCT"在源头消除）。</p>
 
 <h2>7.3 还存在的疑问</h2>
-<ol>
-  <li><b>为什么 <code>-O2</code> 的可执行文件反而比 <code>-O0</code> 大 36 字节？</b>代码段明明更小（11 324 &lt; 11 420）。我推测是 PE 的节对齐（FileAlignment / SectionAlignment）与重定位、导入表布局变化造成的，但没有逐节比对 <code>objdump -h</code> 的文件偏移，还不能下结论。</li>
-  <li><b><code>clock()</code> 在本机的分辨率到底是多少？</b><code>-O0</code> 的九次采样从 0.008 s 波动到 0.017 s，跨度接近一倍。<code>CLOCKS_PER_SEC</code> 在 Windows 上定义为 1000，但底层时钟源的实际粒度、以及它是否受 CPU 频率调节影响，我没有验证。<code>-O2</code> 的九次全 0 说明粒度至少不劣于 1 ms，但"1 ms 以下的东西测不出来"这件事本身需要确认。</li>
-  <li><b>Flex 生成的表是怎么压缩的？</b>生成文件里 <code>yy_accept[20]</code> 只有 20 项，而规则有 5 条、状态显然不止 20 个——说明状态编号经过了重新映射，还可能用了等价类合并（把输入字符分成若干等价类以减少表宽）。这部分属于 DFA 最小化与表压缩，项目 2 应该会展开。</li>
-  <li><b>如果把 <code>hello.c</code> 换成 Clang 编译，四阶段的产物差异会有多大？</b>这是第 6 章那份验证方案要回答的问题，目前只有推断，没有实测。</li>
-</ol>
-
-<h2>7.4 关于实验方法的一点体会</h2>
-<p>这次实验里我最刻意坚持的一件事，是<span class="mark">凡是"预期"和"实测"不一致的地方，都写清楚不一致本身</span>。比如指南说 <code>file hello</code> 应显示 <code>ELF</code>，我的机器显示 <code>PE32+</code>；指南说缺 <code>main</code> 会报 <code>undefined reference to 'main'</code>，我的机器报 <code>WinMain</code>。把这些差异当成"实验结果的一部分"记录，比强行对齐预期更有价值——它们恰好说明四阶段是抽象结构，而格式与命名是实现细节。同样地，五类警告我没有照抄指南的行号，而是记录本机实际报出的 <code>2:28</code>、<code>4:9</code> 等位置；优化对比表填的是九次采样的中位数，而不是单次结果。这些做法让报告里的每个数字都可以被复现。</p>
-
-<h2>7.5 任务完成情况自评</h2>
-<p>对照任务书的 6 个任务逐项核对，全部必做项均已完成，且每一项都留下了可复现的记录：</p>
-<table>
-  <caption>表 7-1　任务完成情况</caption>
-  <tr><th style="width:8%" class="c">任务</th><th style="width:24%">要求</th><th style="width:12%" class="c">状态</th><th>对应本报告位置</th></tr>
-  <tr><td class="c">1.0</td><td>环境配置与自检</td><td class="c">完成</td><td>第 1 章：版本表 1-1、自检记录 1-1/1-2</td></tr>
-  <tr><td class="c">1.1</td><td>编译、读错误、多文件</td><td class="c">完成</td><td>第 2 章：三个验收点见表 2-1</td></tr>
-  <tr><td class="c">1.2</td><td>四阶段产物与 <code>-###</code></td><td class="c">完成</td><td>第 3 章：表 3-1、表 3-2、表 3-3</td></tr>
-  <tr><td class="c">1.3</td><td>四个编译选项实验</td><td class="c">完成</td><td>第 4 章：表 4-1（9 次采样）、表 4-2（5 类警告）、4.3/4.4</td></tr>
-  <tr><td class="c">1.4</td><td>三个 Flex 实验</td><td class="c">完成</td><td>第 5 章：<code>numbers.l</code> 与 <code>mini_c.l</code> 自行完成，两组边界输入见表 5-2/5-3，顺序对比见表 5-5</td></tr>
-  <tr><td class="c">1.5</td><td>国产编译器调研 800 字以上</td><td class="c">完成</td><td>第 6 章：约 1 500 字，参考文献 4 条（含 2 条官方资料）</td></tr>
-</table>
-<p>仍有的不足也说清楚：其一，实验平台是 MinGW-w64 而非指南首选的 Linux/WSL，虽然四阶段机制一致，但 ELF 相关的观察（如 <code>readelf</code> 的段表、<code>.rela.text</code> 的具体形式）没有亲手做；其二，<code>-O2</code> 之后代码段不再变化，我没有进一步用 <code>objdump -d</code> 逐条比对指令数，只用了行数与节大小作为代理指标；其三，毕昇编译器的调研停留在文档层面，缺少在 AArch64 实机上的验证。这三点都可以作为后续补充的方向。</p>
+<p>一是为什么 <code>-O2</code> 的可执行文件反而比 <code>-O0</code> 大 36 字节——代码段明明更小，推测与 PE 节对齐和导入表布局有关，尚未逐节比对；二是 <code>clock()</code> 在 Windows 上的实际分辨率与时钟源，<code>-O0</code> 九次采样从 0.008 s 波动到 0.017 s，跨度接近一倍，需要确认是否受 CPU 频率调节影响；三是 Flex 生成文件里 <code>yy_accept[20]</code> 只有 20 项而规则状态显然更多，说明状态经过重映射与压缩，等价类合并的细节留待项目 2；四是第 6 章设计的毕昇验证方案尚缺 AArch64 实机执行。方法上的一点体会：凡是"预期"与"实测"不一致的地方都原样记录（<code>PE32+</code> 与 <code>ELF</code>、<code>WinMain</code> 与 <code>main</code>），这些差异恰好说明四阶段是抽象结构，格式与命名只是实现细节。</p>
 
 <!-- ================= 附录 A ================= -->
-<h1>附录 A　源文件清单与关键源码</h1>
-
+<h1>附录 A　提交文件清单与自行完成部分</h1>
 <table>
-  <caption>表 A-1　提交的源文件</caption>
-  <tr><th style="width:8%" class="c">序号</th><th style="width:26%">文件</th><th style="width:14%" class="c">对应任务</th><th>作用</th></tr>
-  <tr><td class="c">1</td><td><code>hello.c</code></td><td class="c">1.1 / 1.2</td><td>最简编译流程与四阶段产物观察的被测程序</td></tr>
-  <tr><td class="c">2</td><td><code>bug.c</code></td><td class="c">1.1</td><td>故意缺右括号与分号，用于观察语法诊断（保留，不修复）</td></tr>
-  <tr><td class="c">3</td><td><code>bug_fixed.c</code></td><td class="c">1.1</td><td><code>bug.c</code> 的修复版，补充 <code>)</code>、<code>;</code> 与换行</td></tr>
-  <tr><td class="c">4</td><td><code>add.c</code></td><td class="c">1.1 / 1.2</td><td>提供 <code>add</code> 定义的独立编译单元</td></tr>
-  <tr><td class="c">5</td><td><code>main.c</code></td><td class="c">1.1 / 1.2</td><td>通过 <code>extern</code> 声明调用 <code>add</code>，用于复现链接错误</td></tr>
-  <tr><td class="c">6</td><td><code>loop.c</code></td><td class="c">1.3 实验 1</td><td>循环密集型计时程序，<code>N = 10 000 000</code></td></tr>
-  <tr><td class="c">7</td><td><code>warn.c</code></td><td class="c">1.3 实验 2</td><td>含 5 类缺陷（未定义行为）的诊断样本，仅编译不运行</td></tr>
-  <tr><td class="c">8</td><td><code>warn_fixed.c</code></td><td class="c">1.3 实验 2</td><td><code>warn.c</code> 的修复版，<code>-Wall -Wextra -Werror</code> 下零诊断</td></tr>
-  <tr><td class="c">9</td><td><code>test.c</code></td><td class="c">1.3 实验 3/4</td><td>用于对比 <code>-g</code> 与 <code>-DDEBUG</code> 的小程序</td></tr>
-  <tr><td class="c">10</td><td><code>demo.l</code></td><td class="c">1.4 实验 1</td><td>最简整数识别器（工具示例，原样运行）</td></tr>
-  <tr><td class="c">11</td><td><code>numbers.l</code></td><td class="c">1.4 实验 2</td><td><b>自行完成</b>：四类数字字面量规则</td></tr>
-  <tr><td class="c">12</td><td><code>mini_c.l</code></td><td class="c">1.4 实验 3</td><td><b>自行完成</b>：关键字、标识符、整数三类规则</td></tr>
+  <caption>表 A-1　提交的源文件（均随 <code>src/</code> 目录提交）</caption>
+  <tr><th style="width:7%" class="c">序号</th><th style="width:24%">文件</th><th style="width:13%" class="c">对应任务</th><th>说明</th></tr>
+  <tr><td class="c">1-5</td><td><code>hello.c</code> <code>bug.c</code> <code>bug_fixed.c</code> <code>add.c</code> <code>main.c</code></td><td class="c">1.1 / 1.2</td><td>编译运行、语法诊断（<code>bug.c</code> 保留不修复）、多文件链接</td></tr>
+  <tr><td class="c">6</td><td><code>loop.c</code></td><td class="c">1.3-1</td><td>循环计时程序，<code>N = 10 000 000</code></td></tr>
+  <tr><td class="c">7-8</td><td><code>warn.c</code> / <code>warn_fixed.c</code></td><td class="c">1.3-2</td><td>5 类缺陷诊断样本（仅编译）及修复版</td></tr>
+  <tr><td class="c">9</td><td><code>test.c</code></td><td class="c">1.3-3/4</td><td><code>-g</code> 与 <code>-DDEBUG</code> 对比用</td></tr>
+  <tr><td class="c">10</td><td><code>demo.l</code></td><td class="c">1.4-1</td><td>最简整数识别器（工具示例）</td></tr>
+  <tr><td class="c">11</td><td><code>numbers.l</code></td><td class="c">1.4-2</td><td><b>自行完成</b>四类数字字面量规则</td></tr>
+  <tr><td class="c">12</td><td><code>mini_c.l</code></td><td class="c">1.4-3</td><td><b>自行完成</b>关键字/标识符/整数规则</td></tr>
 </table>
 
-<h2>A.1 <code>warn.c</code> 与修复版 <code>warn_fixed.c</code></h2>
-<pre>/* warn.c —— 仅用于编译诊断，含未定义行为，禁止链接运行 */
-#include &lt;stdio.h&gt;
-int missing_return(void) { }              /* ① -Wreturn-type        */
-int main(void) {
-    int unused = 0;                        /* ② -Wunused-variable    */
-    int x;                                 /* ⑤ 未初始化             */
-    int y = 0;
-    if (y = 5) printf("y=%d\n", y);        /* ③ -Wparentheses        */
-    printf("%d\n", "wrong type");          /* ④ -Wformat=            */
-    return x;
-}</pre>
-
-<pre>/* warn_fixed.c —— 同样选项下零警告 */
-#include &lt;stdio.h&gt;
-
-int missing_return(void) { return 0; }
-
-int main(void) {
-    int x = 0;
-    int y = 0;
-    if (y == 5) printf("y=%d\n", y);
-    printf("%d\n", 42);
-    (void)x;
-    return 0;
-}</pre>
-
-<h2>A.2 <code>numbers.l</code>（自行完成部分）</h2>
+<h2>A.1 <code>numbers.l</code>（自行完成部分）</h2>
 <pre>%option noyywrap
 %{
 #include &lt;stdio.h&gt;
@@ -1099,7 +575,7 @@ int main(void) {
 %%
 int main(void) { yylex(); return 0; }</pre>
 
-<h2>A.3 <code>mini_c.l</code>（自行完成部分）</h2>
+<h2>A.2 <code>mini_c.l</code>（自行完成部分）</h2>
 <pre>%option noyywrap
 %{
 #include &lt;stdio.h&gt;
@@ -1112,25 +588,6 @@ int|if|while           { printf("KW: %s\n", yytext); }
 .                      { printf("UNHANDLED: %s\n", yytext); }
 %%
 int main(void) { yylex(); return 0; }</pre>
-
-<!-- ================= 附录 B ================= -->
-<h1>附录 B　完整命令清单</h1>
-<p class="noindent">以下命令按任务顺序排列，均在 <code>build/</code> 目录（或调试用的 <code>C:\temp\clab</code>）下执行。<code>$</code> 为提示符，不属于命令。</p>
-
-<table>
-  <caption>表 B-1　全部实验命令</caption>
-  <tr><th style="width:12%" class="c">任务</th><th>命令</th></tr>
-  <tr><td class="c">1.0</td><td><code>gcc -Wall -Wextra -O0 -g check.c -o check.exe</code>；<code>./check.exe</code>；<code>nm check.exe | grep -E " (T|t) (main|add)$"</code>；<code>objdump -d check.exe</code>；<code>ldd check.exe</code>；<code>flex demo.l &amp;&amp; gcc -o demo lex.yy.c</code>；<code>printf '123 hello 456\n' | ./demo</code></td></tr>
-  <tr><td class="c">1.1</td><td><code>gcc hello.c -o hello.exe</code>；<code>./hello.exe</code>；<code>file hello.exe</code>；<code>gcc bug.c -o bug.exe</code>；<code>gcc bug_fixed.c -o bug_fixed.exe</code>；<code>gcc main.c -o broken.exe</code>；<code>gcc main.c add.c -o two_files.exe</code></td></tr>
-  <tr><td class="c">1.2</td><td><code>gcc -E hello.c -o hello.i</code>；<code>wc -l hello.i</code>；<code>head -10 hello.i</code>；<code>grep -c '^#' hello.i</code>；<code>gcc -E -P hello.c -o hello_no_markers.i</code>；<code>gcc -S hello.i -o hello.s</code>；<code>grep -n -A 6 -E '^_?main:' hello.s</code>；<code>gcc -c hello.s -o hello.o</code>；<code>file hello.o</code>；<code>nm hello.o</code>；<code>objdump -h hello.o</code>；<code>objdump -r hello.o</code>；<code>gcc hello.o -o hello_from_o.exe</code>；<code>ldd hello_from_o.exe</code>；<code>gcc -c add.c -o add.o</code>；<code>gcc -c main.c -o main.o</code>；<code>gcc add.o -o no_main.exe</code>；<code>gcc main.o add.o -o two_files_o.exe</code>；<code>gcc -### hello.c -o hello_trace 2&gt; trace.txt</code></td></tr>
-  <tr><td class="c">1.3-1</td><td><code>gcc -O{0,1,2,3} loop.c -o loop_O{0,1,2,3}.exe</code>；<code>gcc -O{0,1,2,3} -S loop.c -o loop_O{0,1,2,3}.s</code>；<code>wc -c</code>；<code>wc -l</code>；<code>size</code>；<code>time ./loop_O0.exe</code>；<code>gcc -Q --help=optimizers -O0</code>（其余档位同理）</td></tr>
-  <tr><td class="c">1.3-2</td><td><code>gcc -O1 -Wall -Wextra -c warn.c -o warn.o</code>；<code>gcc -O1 -Wall -Wextra -Werror -c warn.c -o warn.o</code>；<code>gcc -O1 -Wall -Wextra -Werror -c warn_fixed.c -o warn_fixed.o</code></td></tr>
-  <tr><td class="c">1.3-3</td><td><code>gcc -O0 -g test.c -o test_with_gdb.exe</code>；<code>gcc -O0 test.c -o test_no_gdb.exe</code>；<code>gdb --batch -x gdbcmds.txt ./test_with_gdb.exe</code>（脚本内容：<code>break main</code> / <code>run</code> / <code>next</code> / <code>next</code> / <code>print x</code> / <code>info locals</code> / <code>quit</code>）；<code>objdump -h test_with_gdb.exe | grep debug</code></td></tr>
-  <tr><td class="c">1.3-4</td><td><code>gcc -O0 test.c -o test_off.exe</code>；<code>gcc -O0 -DDEBUG test.c -o test_on.exe</code>；<code>strings test_on.exe | grep -c "\[DEBUG\]"</code></td></tr>
-  <tr><td class="c">1.4-1</td><td><code>flex demo.l</code>；<code>gcc -o demo.exe lex.yy.c</code>；<code>printf '123 hello 456\n' | ./demo.exe</code></td></tr>
-  <tr><td class="c">1.4-2</td><td><code>flex numbers.l</code>；<code>gcc -o numbers.exe lex.yy.c</code>；<code>printf '123 0x1F 075 3.14 0\n' | ./numbers.exe</code>；<code>printf '08 0x .5 -12 007\n' | ./numbers.exe</code>；<code>printf '0X1f 1. 1.2.3 0000 0x1G 12abc\n' | ./numbers.exe</code></td></tr>
-  <tr><td class="c">1.4-3</td><td><code>flex mini_c.l</code>；<code>gcc -o mini_c.exe lex.yy.c</code>；<code>printf 'int integer if ifx while while2 _x 42\n' | ./mini_c.exe</code>；<code>printf 'intx if_ while9 42x\n' | ./mini_c.exe</code>；交换规则顺序后：<code>flex mini_c_swapped.l</code> 并重复上述输入</td></tr>
-</table>
 
 <p style="margin-top:6mm;text-align:center;color:#7a8899;font-size:9.2pt;text-indent:0;">— 报告完 —</p>
 </body>
