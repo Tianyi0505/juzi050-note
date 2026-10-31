@@ -39,9 +39,10 @@
   h1 {
     font-family: "Microsoft YaHei", "黑体", sans-serif; font-size: 16pt; color: #12324f;
     margin: 0 0 6mm 0; padding-bottom: 2.5mm; border-bottom: 2px solid #1f4e79;
-    page-break-before: always; page-break-after: avoid; letter-spacing: 1px;
+    page-break-before: auto; page-break-after: avoid; letter-spacing: 1px;
+    margin-top: 9mm;
   }
-  h1.nobreak { page-break-before: auto; }
+  h1:first-of-type { margin-top: 0; }
   h2 { font-family: "Microsoft YaHei", "黑体", sans-serif; font-size: 12pt; color: #1f4e79; margin: 5.5mm 0 2.5mm 0; page-break-after: avoid; }
   h3 { font-family: "Microsoft YaHei", "黑体", sans-serif; font-size: 10.5pt; color: #2b3a4a; margin: 3.5mm 0 1.5mm 0; page-break-after: avoid; }
 
@@ -85,7 +86,7 @@
   .refs p { text-indent: 0; padding-left: 2.2em; text-indent: -2.2em; margin-bottom: 0.4em; }
 
   .tocpage { page-break-before: always; margin: 0 0 2mm 0; }
-  .toc { font-size: 9.2pt; }
+  .toc { font-size: 9.2pt; page-break-after: always; }
   .trow { display: flex; align-items: baseline; margin: 0; line-height: 1.38; }
   .trow .tt { white-space: nowrap; }
   .trow .lead { flex: 1 1 auto; border-bottom: 0.9px dotted #a9b7c6; margin: 0 3px 0 5px; transform: translateY(-2px); }
@@ -246,13 +247,15 @@ $ grep -n "Hello, Compiler" hello.i
 <p>三个结论：宏已不存在——源文件里的 <code>GREETING</code> 在第 1524 行只剩 <code>"Hello, Compiler!"</code> 字面量，预处理是纯文本替换；1526 行里绝大部分是 <code>&lt;stdio.h&gt;</code> 递归包含的内部头文件，自己写的只有 8 行；以 <code>#</code> 开头的 98 行不是未展开的宏，而是<span class="mark">行标记</span>（<code># 行号 "文件名" 标志</code>），供编译器报错时反查源码位置。用 <code>-P</code> 抑制行标记后行数降为 1165，差额 361 行即标记与空行。</p>
 
 <h2>3.3 编译与汇编：从 C 文本到目标文件</h2>
-<div class="cap"><b>终端实录 3-2</b>　生成 <code>.s</code> 与 <code>.o</code> 并观察</div>
+<div class="cap"><b>终端实录 3-2</b>　编译成汇编</div>
 <pre class="term">$ gcc -S hello.i -o hello.s
 $ wc -l hello.s
 57 hello.s
 $ grep -n -E '^_?main:' hello.s
-29:main:
-$ gcc -c hello.s -o hello.o
+29:main:</pre>
+
+<div class="cap"><b>终端实录 3-3</b>　汇编成目标文件，观察符号与重定位</div>
+<pre class="term">$ gcc -c hello.s -o hello.o
 $ file hello.o
 hello.o: x86-64 COFF object file, no line number info, not stripped,
          7 sections, symbol offset=0x2ac, 22 symbols, ...
@@ -271,7 +274,7 @@ OFFSET           TYPE                   VALUE
 <p><code>.s</code> 里 <code>add:</code> 在第 6 行、<code>main:</code> 在第 29 行，与源码顺序一致；本机汇编带大量 <code>.seh_*</code> 伪指令，是给链接器提供 Windows x64 结构化异常处理所需的栈展开信息，Linux 上没有。目标文件是信息量最大的一环：<code>T</code> 表示已定义符号（位于 <code>.text</code> 段），<code>U</code> 表示"本单元用到但没定义"，要留给链接阶段在 C 运行库里解决；<code>.rdata</code> 存字符串常量；4 条 <code>REL32</code> 重定位记录说明这些指令里的地址暂时填 0，等链接器确定最终地址后回填。<code>__main</code> 是 MinGW 特有的运行库初始化调用，Linux 的 GCC 不产生——这正是"可重定位目标文件必须留未定义符号"的原因：<span class="key">编译一个文件时，编译器不可能知道别的文件或运行库里有什么</span>。</p>
 
 <h2>3.4 链接：符号解析与重定位</h2>
-<div class="cap"><b>终端实录 3-3</b>　单独链接 <code>hello.o</code> 即可运行；两个 <code>.o</code> 组合同样可行</div>
+<div class="cap"><b>终端实录 3-4</b>　单独链接 <code>hello.o</code> 即可运行；两个 <code>.o</code> 组合同样可行</div>
 <pre class="term">$ gcc hello.o -o hello_from_o.exe &amp;&amp; ./hello_from_o.exe
 Hello, Compiler! 2 + 3 = 5
 $ gcc main.o add.o -o two_files_o.exe &amp;&amp; ./two_files_o.exe
@@ -283,7 +286,7 @@ collect2.exe: error: ld returned 1 exit status</pre>
 <p>只给 <code>.o</code> 就能链接成功，说明链接器需要的是<span class="mark">符号表与重定位表</span>，不需要源码：<code>printf</code>、<code>__main</code> 由 C 运行库提供（<code>ldd</code> 显示依赖 ucrtbase 等），4 个待填地址在链接时回填。缺少入口的报错与指南的 Linux 版本（<code>undefined reference to 'main'</code>）文本不同、原因相同：链接器把 C 运行时启动对象也链了进来，它需要一个入口符号交出控制权，MinGW 实现里最后尝试的是 <code>WinMain</code>。</p>
 
 <h2>3.5 <code>-###</code>：只打印计划，不执行</h2>
-<div class="cap"><b>终端实录 3-4</b>　<code>-###</code> 打印的流水线（节选）</div>
+<div class="cap"><b>终端实录 3-5</b>　<code>-###</code> 打印的流水线（节选）</div>
 <pre class="term">$ gcc -### hello.c -o hello_trace 2&gt; trace.txt
 $ wc -l trace.txt
 17 trace.txt
@@ -589,6 +592,5 @@ int|if|while           { printf("KW: %s\n", yytext); }
 %%
 int main(void) { yylex(); return 0; }</pre>
 
-<p style="margin-top:6mm;text-align:center;color:#7a8899;font-size:9.2pt;text-indent:0;">— 报告完 —</p>
 </body>
 </html>
