@@ -55,7 +55,7 @@ class MonitorBehaviorTests(unittest.TestCase):
         spec.loader.exec_module(monitor)
         cls.monitor = monitor
 
-    def test_parse_new_accepts_notice_list_and_cursor_shapes(self):
+    def test_notices_parse_new_accepts_notice_list_and_cursor_shapes(self):
         notices = [{"uuid": "notice-1"}]
         self.assertEqual(
             self.monitor.parse_new({"objs": notices, "lastValue": "cursor-1"}),
@@ -66,14 +66,61 @@ class MonitorBehaviorTests(unittest.TestCase):
             (notices, "cursor-2"),
         )
 
-    def test_get_notice_list_accepts_list_wrappers(self):
+    def test_notices_get_notice_list_accepts_list_wrappers(self):
         notices = [{"uuid": "notice-1"}]
         self.assertEqual(self.monitor.get_notice_list({"notices": notices}), notices)
         self.assertEqual(
             self.monitor.get_notice_list({"notices": {"list": notices}}), notices
         )
 
-    def test_collect_targets_filters_notice_types_and_returns_target(self):
+    def test_targets_find_target_url_supports_modes_and_fallbacks(self):
+        homework = make_notice("homework-mode", "英语作业")
+        exam = make_notice("exam-mode", "英语考试", kind="exam")
+        homework_url = "https://example.invalid/work/view?id=homework-mode"
+        exam_url = "https://example.invalid/work/view?id=exam-mode"
+        cases = [
+            ("homework", homework, homework_url),
+            ("homework", exam, None),
+            ("exam", exam, exam_url),
+            ("exam", homework, None),
+            ("both", homework, homework_url),
+            ("any_url", exam, exam_url),
+        ]
+        for mode, item, expected in cases:
+            with self.subTest(mode=mode, identity=item["uuid"]):
+                self.assertEqual(
+                    self.monitor.find_target_url(item, {"match_mode": mode}),
+                    expected,
+                )
+
+        homework_list = dict(homework)
+        homework_list["attachment"] = json.loads(homework["attachment"])
+        self.assertEqual(
+            self.monitor.find_target_url(homework_list, {"match_mode": "homework"}),
+            homework_url,
+        )
+
+        reminder = make_notice("reminder-mode", "作业提醒", reminder=True)
+        self.assertIsNone(self.monitor.find_target_url(reminder, {}))
+        self.assertEqual(
+            self.monitor.find_target_url(reminder, {"exclude_reminders": False}),
+            "https://example.invalid/work/view?id=reminder-mode",
+        )
+
+        fallback = {
+            "attachment": json.dumps(
+                [{"att_web": {"url": "https://example.invalid/work/view?id=fallback"}}]
+            )
+        }
+        self.assertEqual(
+            self.monitor.find_target_url(fallback, {"match_mode": "homework"}),
+            "https://example.invalid/work/view?id=fallback",
+        )
+        self.assertIsNone(
+            self.monitor.find_target_url({"attachment": "not-json"}, {})
+        )
+
+    def test_targets_collect_targets_filters_notice_types_and_returns_target(self):
         notices = [
             make_notice("homework-1", "英语作业"),
             make_notice("exam-1", "英语作业", kind="exam"),

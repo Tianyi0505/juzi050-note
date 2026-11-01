@@ -36,14 +36,39 @@ def check_config_json() -> str:
     return "JSON 对象有效"
 
 
-def check_behavior_tests() -> str:
+CORE_GROUPS: Dict[str, str] = {
+    "notices": "通知解析",
+    "targets": "目标筛选",
+    "keepalive": "保活页面解析",
+}
+
+
+def _iter_test_cases(suite):
+    for item in suite:
+        if isinstance(item, unittest.TestSuite):
+            yield from _iter_test_cases(item)
+        else:
+            yield item
+
+
+def check_behavior_tests(group=None) -> str:
     sys.dont_write_bytecode = True
     suite = unittest.defaultTestLoader.discover(
         start_dir=str(TESTS_DIR), pattern="test_*.py"
     )
+    if group is not None:
+        prefix = "test_{}_".format(group)
+        selected = [
+            case
+            for case in _iter_test_cases(suite)
+            if case.id().rsplit(".", 1)[-1].startswith(prefix)
+        ]
+        suite = unittest.TestSuite(selected)
+
     test_count = suite.countTestCases()
     if test_count == 0:
-        raise RuntimeError("没有发现行为测试")
+        label = CORE_GROUPS.get(group, "行为")
+        raise RuntimeError("没有发现{}测试".format(label))
 
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if not result.wasSuccessful():
@@ -56,12 +81,19 @@ def check_behavior_tests() -> str:
 CHECKS: Dict[str, Check] = {
     "syntax": Check("Python 语法", check_python_syntax),
     "config": Check("config.json", check_config_json),
-    "tests": Check("离线行为测试", check_behavior_tests),
+    "core": Check("核心功能测试", check_behavior_tests),
 }
+for group, label in CORE_GROUPS.items():
+    CHECKS[group] = Check(
+        label, lambda group=group: check_behavior_tests(group)
+    )
+
 MODES: Dict[str, Tuple[str, ...]] = {
-    "all": tuple(CHECKS),
-    "tests": ("tests",),
+    "all": ("syntax", "config", "core"),
+    "core": ("core",),
+    "tests": ("core",),
 }
+MODES.update({group: (group,) for group in CORE_GROUPS})
 
 
 def main(argv=None) -> int:
@@ -73,7 +105,10 @@ def main(argv=None) -> int:
         nargs="?",
         choices=tuple(MODES),
         default="all",
-        help="all：语法、配置和行为测试（默认）；tests：只跑行为测试",
+        help=(
+            "all：语法、配置和全部核心测试（默认）；core/tests：全部核心测试；"
+            "notices、targets、keepalive：分别验证对应功能"
+        ),
     )
     args = parser.parse_args(argv)
 
