@@ -44,6 +44,27 @@
   - 考试类（exam）不保活；任务落盘到 keepalive.json，进程重启后自动恢复。
   - 停止条件：后端提示已提交/已结束/已截止、连续失败 keepalive_max_fail 次、或超过 keepalive_max_hours。
 
+滑块验证码 + 显式 examcheck 请求：
+  - 独立自检：--captcha-check [--captcha-count N]，只请求验证码服务，不访问考试或账户接口。
+  - 流程：get/conf 取服务器时间 → 按官方前端派生 captchaKey/取图 token/iv →
+    get/verification/image 的 token + imageVerificationVo.{shadeImage,cutoutImage} →
+    check/verification/result；仅 result===true 且 extraData.validate 绑定本挑战才通过。
+    失败重取新挑战，不复用已消费的 token，也不输出 token/validate。
+  - 定位优先级：手动 captcha_x → 去描边的归一化像素匹配 → DeepSeek 视觉兜底。
+    x 是透明滑块整图层的横向位移，不是可见缺口左缘或手柄中心；标准主题宽 320px。
+    不做无依据的整列梯度猜测。低纹理、重复纹理和不匹配的图层返回失败。
+  - 本地 JPEG/PNG 匹配需要可选 Pillow：python -m pip install -r requirements-captcha.txt；
+    不安装时仅支持标准库 PNG 解码，JPEG 会尝试视觉兜底。常规通知监控仍只用标准库。
+  - 视觉模型走 OpenAI 兼容的 /chat/completions，只发验证码图片，不带学习通 Cookie。
+    captcha_vision="off" 可关闭视觉兜底；验证码图片落盘到被忽略的 captcha/ 便于核对。
+  - 视觉凭据由环境加载，不写 config.json：VISION_API_KEY（或 DEEPSEEK_API_KEY）；
+    默认 https://api.deepseek.com + deepseek-flash；可用 VISION_BASE_URL / VISION_MODEL 覆盖。
+    --vision-check 仅验证视觉接口和合成图片，不能证明真实验证码通过。
+  - 旧命令 --exam-submit 保留兼容，只显式调用、不参与监控；它会访问考试页及 examcheck，
+    根据需要验证滑块并传回服务端 validate。examcheck 的最终业务语义未核实，
+    status=true 只报告该接口通过，绝不据此宣称已交卷；过期/结束立即停止。
+    不要为测试验证码而运行此命令。
+
 用法：
   python monitor.py                # 持续监控，发现新作业自动打开（含自动登录兜底 + 作业保活）
   python monitor.py --new-once     # 查一次新通知并列出（不循环、不打开；取不到新规时预览列表里更新的项）
@@ -54,8 +75,13 @@
   python monitor.py --check        # 健康检查：输出 HEALTHY / UNHEALTHY（含原因），并以退出码 0/1 表示；供看门狗调用
   python monitor.py --stop         # 按 PID 文件结束旧实例（看门狗重启前调用，避免多开）
   python monitor.py --keepalive <作业入口URL>   # 手工对某个作业开始保活（调试用，前台跑）
+  python monitor.py --captcha-check                         # 独立真实滑块验证，不访问考试
+  python monitor.py --captcha-check --captcha-count 5        # 连续自检 5 组（最多 20 组）
+  python monitor.py --vision-check                          # 仅自检视觉 API 和合成图片
+  python monitor.py --exam-submit <考试页URL>                # 旧命令：显式请求 examcheck，非验证码自检
+  python monitor.py --exam-submit <考试页URL> --exam-x 170   # 手动指定协议位移（不是可见左缘）
 
-依赖：仅 Python 标准库（urllib / json / webbrowser / time / os / signal / datetime / base64 / re）。
+依赖：常规监控只用标准库；本地 JPEG 匹配建议安装 requirements-captcha.txt。
 
 重要：
   - 私密凭据（账号密码、cookie）已统一移到「个人任务/.env」，并被 .gitignore 忽略，请勿提交到 git、勿泄露。
@@ -69,6 +95,12 @@ import json
 import time
 import signal
 import base64
+import hashlib
+import io
+import math
+import uuid
+import zlib
+import struct
 import threading
 import webbrowser
 import urllib.request
@@ -86,8 +118,8 @@ COOKIES_JSON_PATH = os.path.join(BASE_DIR, "cookies.json")  # 自动登录后的
 PID_PATH = os.path.join(BASE_DIR, "monitor.pid")            # 健康检查的 PID 文件
 KEEPALIVE_PATH = os.path.join(BASE_DIR, "keepalive.json")   # 作业保活任务（跨进程重启恢复）
 HEALTH_STALE_SEC = 10 * 60   # 日志超过该秒数未更新视为“不健康”（看门狗阈值）
-IDLE_MARKER = "本次无新"      # 这类轮询心跳日志视为“不重要”，只保留最近若干条
-IDLE_KEEP = 20
+LOG_MAX_BYTES = 2 * 1024 * 1024  # 日志最多保留最近 2 MiB，避免全文件扫描导致内存峰值
+SEEN_KEEP = 5000              # 只保留最近 5000 个已见通知 ID，限制常驻内存
 
 # --------------------------------------------------------------------------
 # .env 加载（账号密码/cookie 等私密凭据统一放 .env，不进 config.json，避免提交泄露）
@@ -154,6 +186,17 @@ DEFAULTS = {
     "keepalive_max_hours": 12,         # 单个作业最多保活多久（小时），到期自动停止
     "keepalive_max_fail": 5,           # 连续失败这么多次就停止并告警
     "keepalive_carry_answers": True,   # True=把页面里已保存的答案原样回传；False=只发表单结构
+    # ---- 考试交卷 + 滑块验证码（详见 exam_submit / captcha_solve）----
+    "captcha_version": "1.1.22",
+    "captcha_dir": "captcha",      # 验证码图片落盘目录（相对脚本目录）
+    "captcha_scale": 1.0,          # 非标准主题的额外位移比例；标准 320px 主题保持 1，不影响手动 x
+    "captcha_x": None,             # 手动协议位移；仅调试用，新挑战通常需要不同 x
+    "captcha_max_try": 3,          # 每次调用最多获取的新挑战数
+    # 像素匹配优先；视觉模型只作兜底（.env 填 VISION_API_KEY 默认走 DeepSeek）
+    "captcha_vision": "auto",      # auto=本地无法匹配时调用；off=只用本地算法
+    "vision_base_url": "",         # 留空= https://api.deepseek.com（非私密，可写这里）
+    "vision_model": "",            # 留空= deepseek-flash（也可在 .env 里用 VISION_MODEL 覆盖）
+    "captcha_vision_timeout": 25,  # 视觉接口超时（秒）
     "request_body_template": (
         "type=2&notice_type=&lastValue=&sort=&folderUUID=&kw=&startTime=&endTime="
         "&gKw=&gName=&year={YEAR}&tag=&fidsCode=&queryFolderNoticePrevYear=0"
@@ -513,51 +556,96 @@ def save_cookies_json(cookie):
 # 日志
 # --------------------------------------------------------------------------
 LOGF = None  # 由 main() 打开为 monitor.log 的追加句柄；脚本自己管理该文件
+_LOG_LOCK = threading.RLock()
+_CONSOLE_IDLE_LEN = 0  # 控制台心跳只占一行，避免滚屏累积
+
+
+def _format_log_line(*args):
+    ts = datetime.now().strftime("%H:%M:%S")
+    return f"[{ts}] " + " ".join(str(a) for a in args)
+
+
+def _write_log_line(line):
+    with _LOG_LOCK:
+        if LOGF is not None:
+            try:
+                LOGF.write(line + "\n")
+                LOGF.flush()
+            except Exception:
+                pass
+        trim_log(MONITOR_LOG_PATH)
 
 
 def log(*args):
-    ts = datetime.now().strftime("%H:%M:%S")
-    line = f"[{ts}] " + " ".join(str(a) for a in args)
-    print(line, flush=True)  # 同时输出到控制台/后台捕获，便于实时查看
-    if LOGF is not None:
+    global _CONSOLE_IDLE_LEN
+    line = _format_log_line(*args)
+    with _LOG_LOCK:
+        if _CONSOLE_IDLE_LEN:
+            print()  # 结束上一条原位更新的心跳行
+            _CONSOLE_IDLE_LEN = 0
+        print(line, flush=True)
+        _write_log_line(line)
+
+
+def trim_log(path, max_bytes=LOG_MAX_BYTES):
+    """只在超限时保留日志尾部，避免每轮把完整日志读入内存。"""
+    global LOGF
+    temp_path = f"{path}.{os.getpid()}.tmp"
+    reopen_log = False
+    with _LOG_LOCK:
         try:
-            LOGF.write(line + "\n")
-            LOGF.flush()
+            if os.path.getsize(path) <= max_bytes:
+                return
+            reopen_log = LOGF is not None
+            if reopen_log:
+                try:
+                    LOGF.flush()
+                except Exception:
+                    pass
+                try:
+                    LOGF.close()
+                except Exception:
+                    pass
+                LOGF = None
+            with open(path, "rb") as f:
+                f.seek(-max_bytes, os.SEEK_END)
+                tail = f.read(max_bytes)
+            boundary = tail.find(b"\n")
+            tail = tail[boundary + 1:] if boundary >= 0 else b""
+            with open(temp_path, "wb") as f:
+                f.write(tail)
+            os.replace(temp_path, path)
         except Exception:
-            pass
-
-
-def trim_log(path, marker, keep):
-    """保留所有重要日志，仅把含 marker 的“不重要”日志裁到最近 keep 条（保序）。"""
-    try:
-        with open(path, encoding="utf-8") as f:
-            lines = f.read().splitlines()
-    except Exception:
-        return
-    idle_pos = [i for i, l in enumerate(lines) if marker in l]
-    excess = len(idle_pos) - keep
-    if excess <= 0:
-        return
-    drop = set(idle_pos[:excess])
-    kept = [l for i, l in enumerate(lines) if i not in drop]
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            if kept:
-                f.write("\n".join(kept) + "\n")
-    except Exception:
-        pass
+            try:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+            except Exception:
+                pass
+        finally:
+            if reopen_log:
+                try:
+                    LOGF = open(path, "a", encoding="utf-8", buffering=1)
+                except Exception:
+                    LOGF = None
 
 
 def log_idle(*args):
-    """不重要日志：记录后把同类旧行裁到最近 IDLE_KEEP 条。"""
-    log(*args)
-    trim_log(MONITOR_LOG_PATH, IDLE_MARKER, IDLE_KEEP)
+    """记录心跳并在控制台原位更新同一行；日志文件按大小限制。"""
+    global _CONSOLE_IDLE_LEN
+    line = _format_log_line(*args)
+    with _LOG_LOCK:
+        _write_log_line(line)
+        if sys.stdout.isatty():
+            padding = max(0, _CONSOLE_IDLE_LEN - len(line))
+            print("\r" + line + " " * padding, end="", flush=True)
+            _CONSOLE_IDLE_LEN = len(line)
 
 
 # --------------------------------------------------------------------------
 # 配置 & 状态
 # --------------------------------------------------------------------------
-def load_config():
+def load_config(require_auth=True):
+    """自检只读非认证配置；监控和业务命令默认仍要求账户来源。"""
     cfg = dict(DEFAULTS)
     if os.path.exists(CONFIG_PATH):
         try:
@@ -565,6 +653,8 @@ def load_config():
                 cfg.update(json.load(f))
         except Exception as e:
             log("读取 config.json 失败，使用默认值:", e)
+    if not require_auth:
+        return cfg
     # 私密凭据从 .env 注入（不写入 config.json，避免提交泄露）
     if ENV.get("CHAO_XING_ACCOUNT"):
         cfg["account"] = ENV["CHAO_XING_ACCOUNT"]
@@ -584,15 +674,25 @@ def load_seen():
     if os.path.exists(SEEN_PATH):
         try:
             with open(SEEN_PATH, encoding="utf-8") as f:
-                return set(json.load(f).get("uuids", []))
+                uuids = json.load(f).get("uuids", [])
+            if isinstance(uuids, list):
+                # dict 保留插入顺序，超限时可优先淘汰较早的 ID。
+                if len(uuids) > SEEN_KEEP:
+                    uuids = uuids[-SEEN_KEEP:]
+                    _save_json(SEEN_PATH,
+                               {"uuids": uuids,
+                                "updated": datetime.now().isoformat(timespec="seconds")},
+                               "seen.json")
+                return dict.fromkeys(uuids, None)
         except Exception:
             pass
-    return set()
+    return {}
 
 
 def save_seen(seen):
+    uuids = list(seen) if not isinstance(seen, dict) else list(seen.keys())
     _save_json(SEEN_PATH,
-               {"uuids": sorted(seen),
+               {"uuids": uuids[-SEEN_KEEP:],
                 "updated": datetime.now().isoformat(timespec="seconds")},
                "seen.json")
 
@@ -1248,6 +1348,9 @@ def _ka_worker(cfg):
                     _ka_persist()
                 else:
                     log(f"⚠️ 保活保存失败（第 {t['fail']} 次）：{msg}")
+        # 已停止的任务仍持有整份答案表单；从全局队列移除，避免长期运行时累积。
+        with _KA_LOCK:
+            _KA_TASKS[:] = [task for task in _KA_TASKS if task["status"] == "running"]
 
 
 def _ka_persist():
@@ -1309,6 +1412,755 @@ def restore_keepalive(cfg):
     for it in items:
         if it.get("work_url"):
             start_keepalive(it["work_url"], cfg, it.get("title", ""))
+
+
+# --------------------------------------------------------------------------
+# 滑块验证码。协议依据 https://captcha.chaoxing.com/load.min.js：
+#   get/conf → 按服务器时间生成本轮参数 → get/verification/image
+#   → shadeImage/cutoutImage → check/verification/result → extraData.validate
+# x 是整张透明滑块图层的水平位移，不是缺口可见左缘，也不是鼠标手柄坐标。
+# 验证码测试不需要登录态，也不调用任何考试接口。
+# --------------------------------------------------------------------------
+CAPTCHA_BASE = "https://captcha.chaoxing.com/captcha"
+CAPTCHA_VERSION = "1.1.22"
+EXAM_CAPTCHA_ID = "Ew0z9skxsLzVKQjmeObQiRVLxkxbPkRF"
+EXAM_CHECK_PATH = "/exam-ans/exam/test/examcheck"
+CAPTCHA_REFERER = "https://mooc1-api.chaoxing.com/exam-ans/exam/test/examcode/examnotes"
+
+
+def _is_exam_url(url):
+    """仅允许明确的 HTTPS 考试主机，避免把账户 Cookie 发给任意链接。"""
+    try:
+        p = urllib.parse.urlsplit(url)
+        return (p.scheme == "https" and p.hostname in ("mooc1-api.chaoxing.com", "mooc1.chaoxing.com")
+                and p.port in (None, 443) and p.username is None and p.password is None)
+    except (TypeError, ValueError):
+        return False
+
+
+class _ExamRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not _is_exam_url(newurl):
+            raise ValueError("考试页跳转到不受支持的地址，已阻止转发 Cookie；请检查链接或刷新登录。")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _http_get(url, referer="", timeout=20):
+    """GET 考试文本并更新 _JAR；初始目标与每次重定向都限制在考试主机。"""
+    if not _is_exam_url(url):
+        raise ValueError("仅支持 HTTPS 学习通考试主机，未发送账户 Cookie。")
+    _strip_proxy()
+    req = urllib.request.Request(url, method="GET")
+    req.add_header("User-Agent", HEADERS["User-Agent"])
+    req.add_header("Accept", "*/*")
+    req.add_header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
+    req.add_header("Cookie", jar_to_header(_JAR))
+    if referer:
+        req.add_header("Referer", referer)
+    r = urllib.request.build_opener(_ExamRedirectHandler()).open(req, timeout=timeout)
+    raw = r.read().decode("utf-8", "ignore")
+    update_jar_from_response(_JAR, r)
+    return raw, r.geturl()
+
+
+def _http_bytes(url, referer="", timeout=20):
+    """GET 二进制。验证码图片在 captcha-b.chaoxing.com 上是公开静态资源，刻意不带 cookie。"""
+    _strip_proxy()
+    req = urllib.request.Request(url, method="GET")
+    req.add_header("User-Agent", HEADERS["User-Agent"])
+    req.add_header("Accept", "*/*")
+    if referer:
+        req.add_header("Referer", referer)
+    r = urllib.request.urlopen(req, timeout=timeout)
+    return r.read()
+
+
+def _jsonp(raw):
+    """解析 `cb({...})` / `cb({...});` / 纯 JSON；失败返回 None。"""
+    s = (raw or "").strip()
+    m = re.match(r"^[\w$.\-\[\]]+\s*\((.*)\)\s*;?\s*$", s, re.S)
+    if m:
+        s = m.group(1)
+    try:
+        return json.loads(s)
+    except Exception:
+        return None
+
+
+def _qs(params):
+    """拼查询串；冒号不转义（验证码 token 形如 md5:过期毫秒，服务端按冒号切分）。"""
+    return "&".join(f"{k}={urllib.parse.quote(str(v), safe=':')}"
+                    for k, v in params.items() if v is not None)
+
+
+def _find_field(obj, *names):
+    """在嵌套 dict/list 里按名字（忽略大小写）找第一个非空标量值。"""
+    want = {n.lower() for n in names}
+    stack = [obj]
+    while stack:
+        cur = stack.pop(0)
+        if isinstance(cur, dict):
+            for k, v in cur.items():
+                if k.lower() in want and not isinstance(v, (dict, list)) and v not in (None, ""):
+                    return v
+            stack.extend(cur.values())
+        elif isinstance(cur, list):
+            stack.extend(cur)
+    return None
+
+
+def _first_str(obj, *names):
+    v = _find_field(obj, *names)
+    return v if isinstance(v, str) and v else ""
+
+
+def _need_captcha(data):
+    """业务响应是否在索要验证码。"""
+    if not isinstance(data, dict):
+        return False
+    for k in ("needVcode", "needValidate", "needCaptcha"):
+        v = _find_field(data, k)
+        if v not in (None, "") and str(v).lower() not in ("0", "false"):
+            return True
+    if _find_field(data, "captchaKey") and _find_field(data, "captchaId"):
+        return True
+    msg = str(_find_field(data, "msg", "errorMsg", "message") or "")
+    return ("验证码" in msg) or ("验证失败" in msg)
+
+
+def _exam_result_tag(data, raw=""):
+    """examcheck 响应：ok 只表示该接口通过，不等于最终交卷。"""
+    if not isinstance(data, dict):
+        return "unknown"
+    text = " ".join(str(data.get(k) or "") for k in ("msg", "message", "errorMsg"))
+    if any(k in text for k in ("过期", "已结束", "已截止", "时间已到", "未开始", "不允许")):
+        return "over"
+    if _need_captcha(data):
+        return "captcha"
+    if any(k in text for k in ("已交卷", "已提交", "已经提交", "重复提交")):
+        return "done"
+    flags = [data.get(k) for k in ("status", "result", "success") if k in data]
+    if any(v is True for v in flags) and not any(v is False for v in flags):
+        return "ok"
+    return "unknown"
+
+
+def _captcha_call(path, params, referer, version=CAPTCHA_VERSION):
+    """验证码服务不带账户 Cookie；只接受 JSON 对象响应。"""
+    q = dict(params)
+    q.update({"callback": "cx_captcha_function", "version": version,
+              "_": str(int(time.time() * 1000))})
+    raw = _http_bytes(f"{CAPTCHA_BASE}/{path}?{_qs(q)}", referer).decode("utf-8", "replace")
+    data = _jsonp(raw)
+    return (data if isinstance(data, dict) else {}), raw
+
+
+def _captcha_parameters(cap_id, server_time, typ="slide"):
+    """与官方前端一致；每个挑战使用独立 key、取图 token 和 iv。"""
+    stamp = str(int(server_time))
+
+    def md5(text):
+        return hashlib.md5(text.encode("utf-8")).hexdigest()
+
+    key = md5(stamp + str(uuid.uuid4()))
+    token = md5(stamp + cap_id + typ + key) + ":" + str(int(stamp) + 300000)
+    iv = md5(cap_id + typ + str(int(time.time() * 1000)) + str(uuid.uuid4()))
+    return {"captchaId": cap_id, "type": typ, "captchaKey": key, "token": token, "iv": iv}
+
+
+def _captcha_validate(data, cap_id, challenge_token):
+    """只接受 result===true 和服务端实际下发、绑定本挑战的 validate。"""
+    if not isinstance(data, dict) or data.get("result") is not True:
+        return ""
+    if data.get("error") not in (None, 0, "0"):
+        return ""
+    extra = data.get("extraData")
+    if isinstance(extra, str):
+        try:
+            extra = json.loads(extra)
+        except (TypeError, ValueError):
+            return ""
+    value = extra.get("validate") if isinstance(extra, dict) else None
+    expected = f"validate_{cap_id}_{challenge_token}"
+    return value if isinstance(value, str) and value == expected else ""
+
+
+def _b64_image(v):
+    """base64（可带 data: 前缀）→ bytes；不像图片则返回空。"""
+    if not isinstance(v, str) or len(v) < 64:
+        return b""
+    s = v.split(",", 1)[1] if v.startswith("data:") else v
+    try:
+        blob = base64.b64decode(s + "=" * (-len(s) % 4))
+    except Exception:
+        return b""
+    return blob
+
+
+def _image_bytes(v, referer=""):
+    """get 下发的图片：base64 / data: 前缀 / http(s) URL 三种都取成字节。"""
+    if isinstance(v, str) and v.startswith(("http://", "https://")):
+        try:
+            return _http_bytes(v, referer=referer)
+        except Exception as e:
+            log(f"⚠️ 下载验证码图片失败：{type(e).__name__}: {str(e)[:120]}")
+            return b""
+    return _b64_image(v)
+
+
+def _png_decode(data):
+    """最小 PNG 解码（8 位、非隔行、灰度/RGB/调色板/RGBA）。
+
+    返回 (宽, 高, [(r,g,b), ...], [alpha, ...])；不支持就返回 None。
+    只用标准库，避免为了滑块识别引入 Pillow 依赖。
+    """
+    if not data or data[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    pos, w, h, depth, color = 8, 0, 0, 8, 6
+    palette, transparency, idat = b"", b"", []
+    while pos + 12 <= len(data):
+        ln = int.from_bytes(data[pos:pos + 4], "big")
+        if pos + ln + 12 > len(data):
+            return None
+        typ = data[pos + 4:pos + 8]
+        body = data[pos + 8:pos + 8 + ln]
+        pos += ln + 12
+        if typ == b"IHDR":
+            if ln != 13:
+                return None
+            w = int.from_bytes(body[0:4], "big")
+            h = int.from_bytes(body[4:8], "big")
+            depth, color = body[8], body[9]
+            if body[12]:           # 隔行扫描（Adam7）不支持
+                return None
+        elif typ == b"PLTE":
+            palette = body
+        elif typ == b"tRNS":
+            transparency = body
+        elif typ == b"IDAT":
+            idat.append(body)
+        elif typ == b"IEND":
+            break
+    ch = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}.get(color)
+    if depth != 8 or not ch or w <= 0 or h <= 0:
+        return None
+    try:
+        raw = zlib.decompress(b"".join(idat))
+    except Exception:
+        return None
+    stride = w * ch
+    if len(raw) < (stride + 1) * h:
+        return None
+    prev = bytearray(stride)
+    px, alpha, i = [], [], 0
+    for _ in range(h):
+        f = raw[i]
+        line = bytearray(raw[i + 1:i + 1 + stride])
+        i += stride + 1
+        if f == 1:                                  # Sub
+            for x in range(ch, stride):
+                line[x] = (line[x] + line[x - ch]) & 0xFF
+        elif f == 2:                                # Up
+            for x in range(stride):
+                line[x] = (line[x] + prev[x]) & 0xFF
+        elif f == 3:                                # Average
+            for x in range(stride):
+                a = line[x - ch] if x >= ch else 0
+                line[x] = (line[x] + ((a + prev[x]) >> 1)) & 0xFF
+        elif f == 4:                                # Paeth
+            for x in range(stride):
+                a = line[x - ch] if x >= ch else 0
+                b = prev[x]
+                c = prev[x - ch] if x >= ch else 0
+                p = a + b - c
+                pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+                pr = a if (pa <= pb and pa <= pc) else (b if pb <= pc else c)
+                line[x] = (line[x] + pr) & 0xFF
+        elif f != 0:
+            return None
+        prev = line
+        if color == 3:                              # 调色板
+            for x in range(w):
+                k = line[x] * 3
+                px.append((palette[k], palette[k + 1], palette[k + 2])
+                          if k + 2 < len(palette) else (0, 0, 0))
+                alpha.append(transparency[line[x]] if line[x] < len(transparency) else 255)
+        elif color in (0, 4):                       # 灰度 / 灰度+alpha
+            for x in range(w):
+                g = line[x * ch]
+                px.append((g, g, g))
+                transparent = color == 0 and len(transparency) == 2 and g == int.from_bytes(transparency, "big")
+                alpha.append(line[x * ch + 1] if color == 4 else (0 if transparent else 255))
+        else:                                       # RGB / RGBA
+            for x in range(w):
+                o = x * ch
+                rgb = (line[o], line[o + 1], line[o + 2])
+                px.append(rgb)
+                transparent = (color == 2 and len(transparency) == 6
+                               and rgb == struct.unpack(">HHH", transparency))
+                alpha.append(line[o + 3] if color == 6 else (0 if transparent else 255))
+    return w, h, px, alpha
+
+
+def _image_size(blob):
+    """只读尺寸：PNG 看 IHDR，JPEG 扫 SOF 段。解不了像素时也能告诉模型画布多大。"""
+    if not blob or len(blob) < 24:
+        return None
+    if blob[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", blob[16:24])
+        return (w, h) if w > 0 and h > 0 else None
+    if blob[:2] != b"\xff\xd8":
+        return None
+    i, n = 2, len(blob)
+    while i + 9 < n:
+        if blob[i] != 0xFF:
+            i += 1
+            continue
+        marker = blob[i + 1]
+        if marker in (0xD8, 0xD9) or 0xD0 <= marker <= 0xD7:   # 无长度字段
+            i += 2
+            continue
+        seg = struct.unpack(">H", blob[i + 2:i + 4])[0]
+        if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7,
+                      0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+            h, w = struct.unpack(">HH", blob[i + 5:i + 9])
+            return (w, h) if w > 0 and h > 0 else None
+        i += 2 + seg
+    return None
+
+
+def _save_captcha_image(tag, blob, cfg):
+    """把验证码图片落到 captcha/ 下，方便人工核对或手动量 x。"""
+    if not blob:
+        return ""
+    d = cfg.get("captcha_dir") or "captcha"
+    path_dir = d if os.path.isabs(d) else os.path.join(BASE_DIR, d)
+    try:
+        os.makedirs(path_dir, exist_ok=True)
+        ext = ".jpg" if blob[:2] == b"\xff\xd8" else ".png"
+        path = os.path.join(path_dir,
+                            f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{tag}{ext}")
+        with open(path, "wb") as f:
+            f.write(blob)
+        return path
+    except Exception as e:
+        log(f"⚠️ 保存验证码图片失败：{e}")
+        return ""
+
+
+def _decode_image(blob):
+    """可选 Pillow 支持 JPEG/完整 PNG；未安装时保留标准库 PNG 解码。"""
+    try:
+        from PIL import Image
+    except ImportError:
+        return _png_decode(blob)
+    try:
+        with Image.open(io.BytesIO(blob)) as image:
+            image = image.convert("RGBA")
+            pixels = list(image.get_flattened_data() if hasattr(image, "get_flattened_data")
+                          else image.getdata())
+            return (image.width, image.height, [p[:3] for p in pixels],
+                    [p[3] for p in pixels])
+    except (OSError, ValueError):
+        return None
+
+
+def _match_slider(bg, fg):
+    """透明图层平移匹配，返回 (x, 相关系数)；低置信度/非等高条带返回 None。
+
+    去掉两圈透明边界附近的描边，再做零均值归一化相关，避免黄框和缺口变暗
+    干扰。保留透明留白的原始坐标，因此输出已经是协议要求的 strip 位移。
+    """
+    if not bg or not fg:
+        return None
+    w, h, px, _ = bg
+    fw, fh, fpx, alpha = fg
+    if fw >= w or fh != h:
+        return None
+    mask = {i for i, a in enumerate(alpha) if a > 128}
+    for _ in range(2):
+        mask = {i for i in mask if 0 < i % fw < fw - 1 and fw <= i < fw * (fh - 1)
+                and all(j in mask for j in (i - 1, i + 1, i - fw, i + fw))}
+    points = sorted(mask)
+    if len(points) < 12:
+        return None
+    points = points[::max(1, (len(points) + 1199) // 1200)]
+    n = len(points)
+    values = [sum(fpx[i]) / 3.0 for i in points]
+    mean = sum(values) / n
+    centered = [v - mean for v in values]
+    energy = sum(v * v for v in centered)
+    if energy < n:                          # 平坦模板没有可识别的纹理
+        return None
+    offsets = [(i // fw) * w + i % fw for i in points]
+    gray = [sum(p) / 3.0 for p in px]
+    scores = []
+    for x in range(w - fw + 1):
+        values = [gray[i + x] for i in offsets]
+        total = sum(values)
+        variance = sum(v * v for v in values) - total * total / n
+        if variance <= n:
+            continue
+        corr = sum(a * b for a, b in zip(centered, values)) / math.sqrt(energy * variance)
+        scores.append((corr, x))
+    if not scores:
+        return None
+    best, x = max(scores)
+    other = max((s for s, pos in scores if abs(pos - x) > max(4, fw // 3)), default=-1.0)
+    if best < 0.65 or best - other < 0.08:
+        return None                         # 相似纹理重复/背景平坦时不胡猜
+    return x, best
+
+
+def _locate_gap(bg, fg=None):
+    """返回滑块整图层的横向位移；没有匹配证据就返回 None。"""
+    match = _match_slider(bg, fg)
+    return match[0] if match else None
+
+
+# --------------------------------------------------------------------------
+# 视觉模型识别缺口位置（可选；.env 填了 VISION_API_KEY 即启用，默认走 DeepSeek）
+#   只把验证码图片发给模型，绝不带学习通 cookie —— 避免登录态泄露给第三方。
+# --------------------------------------------------------------------------
+VISION_PROMPT = (
+    "第一张是滑块验证码底图，宽 {w} 像素、高 {h} 像素，坐标从 0 开始。"
+    "若附有第二张图，它是带透明留白的滑块图层，与底图纵向对齐。"
+    "匹配两图的纹理，求把整个滑块图层向右平移多少像素才重合，记为 x。"
+    "x 是图层位移，不是可见缺口左缘、滑块中心或鼠标手柄位置；不要忽略透明左边距。"
+    "仅有底图时，返回目标缺口左缘。无法定位时返回 null。"
+    '只输出一行 JSON：{{"x": 整数或null}}，不要解释。'
+)
+
+
+def _data_url(blob):
+    mime = "image/jpeg" if blob[:2] == b"\xff\xd8" else "image/png"
+    return f"data:{mime};base64," + base64.b64encode(blob).decode()
+
+
+DEFAULT_VISION_BASE = "https://api.deepseek.com"
+DEFAULT_VISION_MODEL = "deepseek-flash"
+
+
+def _vision_config(cfg):
+    """视觉模型配置；captcha_vision=off 或缺 key 时返回 None。
+
+    base/model 默认走 DeepSeek（deepseek-flash 支持图片输入），
+    所以只要在 .env 里填 VISION_API_KEY（或 DEEPSEEK_API_KEY）就能用。
+    """
+    if str(cfg.get("captcha_vision") or "auto").lower() == "off":
+        return None
+
+    def pick(name):                      # OS 环境变量优先，便于临时覆盖
+        return (os.environ.get(name) or ENV.get(name) or "").strip()
+
+    base = (pick("VISION_BASE_URL") or cfg.get("vision_base_url")
+            or DEFAULT_VISION_BASE).rstrip("/")
+    model = pick("VISION_MODEL") or cfg.get("vision_model") or DEFAULT_VISION_MODEL
+    key = pick("VISION_API_KEY") or pick("DEEPSEEK_API_KEY")
+    if not key:
+        return None
+    try:
+        timeout = float(cfg.get("captcha_vision_timeout", 25) or 25)
+    except (TypeError, ValueError):
+        timeout = 25.0
+    # deepseek-flash 是推理模型：默认先吐一大段 reasoning_content，max_tokens 一小就只剩
+    # 空白 content。它认 thinking.type=disabled，关掉后 1 秒内直接给答案。
+    no_thinking = urllib.parse.urlsplit(base).hostname == "api.deepseek.com" and model.startswith("deepseek")
+    return {"base": base, "model": model, "key": key, "timeout": timeout,
+            "no_thinking": no_thinking}
+
+
+def _post_json(url, payload, headers, timeout=25):
+    """POST JSON 并返回响应文本；刻意不带学习通 cookie。"""
+    _strip_proxy()
+    req = urllib.request.Request(
+        url, data=json.dumps(payload).encode("utf-8"), method="POST")
+    for k, v in headers.items():
+        req.add_header(k, v)
+    r = urllib.request.urlopen(req, timeout=timeout)
+    return r.read().decode("utf-8", "ignore")
+
+
+def _vision_reply_text(raw):
+    """从 OpenAI 兼容响应里取 content；异常或报错返回空串。"""
+    try:
+        data = json.loads(raw)
+    except Exception:
+        return ""
+    if not isinstance(data, dict) or data.get("error"):
+        return ""
+    choices = data.get("choices") or []
+    if not choices or not isinstance(choices[0], dict):
+        return ""
+    content = (choices[0].get("message") or {}).get("content")
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):        # 部分实现把 content 拆成段落
+        return " ".join(p.get("text", "") for p in content
+                        if isinstance(p, dict) and p.get("text"))
+    return ""
+
+
+def _x_from_text(text):
+    """仅接受明确的 JSON 整数 x，绝不把解释里的候选数量当坐标。"""
+    if not isinstance(text, str):
+        return None
+    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip(), flags=re.I)
+    try:
+        data = json.loads(text)
+    except (TypeError, ValueError):
+        return None
+    value = data.get("x") if isinstance(data, dict) else None
+    return value if type(value) is int else None
+
+
+def _vision_locate_x(bg_bytes, fg_bytes, size, cfg):
+    """让视觉模型看底图给出缺口 x；未配置或失败返回 None，由调用方回退本地算法。"""
+    conf = _vision_config(cfg)
+    if not conf or not bg_bytes:
+        return None
+    w = size[0] if size else 0
+    h = size[1] if size else 0
+    content = [{"type": "text",
+                "text": VISION_PROMPT.format(w=w or "未知", h=h or "未知")},
+               {"type": "image_url", "image_url": {"url": _data_url(bg_bytes)}}]
+    if fg_bytes:
+        content.append({"type": "image_url", "image_url": {"url": _data_url(fg_bytes)}})
+    payload = {"model": conf["model"], "temperature": 0, "max_tokens": 512,
+               "messages": [{"role": "user", "content": content}]}
+    if conf.get("no_thinking"):
+        payload["thinking"] = {"type": "disabled"}
+    log(f"🧩 请求视觉模型（{conf['model']}）识别缺口位置…")
+    try:
+        raw = _post_json(conf["base"] + "/chat/completions", payload,
+                         {"Content-Type": "application/json",
+                          "Authorization": "Bearer " + conf["key"]},
+                         conf["timeout"])
+    except Exception as e:
+        log(f"⚠️ 视觉模型调用失败：{type(e).__name__}: {str(e)[:160]}")
+        return None
+    text = _vision_reply_text(raw)
+    if not text:
+        log(f"⚠️ 视觉模型返回异常：{raw[:160]}")
+        return None
+    x = _x_from_text(text)
+    if x is None or x < 0 or (w and x >= w):
+        log(f"⚠️ 视觉模型没给出可用的 x：{text[:120]}")
+        return None
+    log(f"🧩 视觉模型判断缺口 x={x}（回复 {text[:60]}）")
+    return x
+
+
+def _probe_png(width=80, height=40):
+    """造一张带缺口的灰度 PNG，供 --vision-check 自检（不依赖第三方库）。"""
+    raw = bytearray()
+    for y in range(height):
+        raw.append(0)                       # 每行滤波方式：none
+        for x in range(width):
+            raw.append(30 if (40 <= x < 52 and 10 <= y < 30) else 200)
+
+    def chunk(tag, data):
+        return (len(data).to_bytes(4, "big") + tag + data
+                + (zlib.crc32(tag + data) & 0xFFFFFFFF).to_bytes(4, "big"))
+
+    ihdr = (width.to_bytes(4, "big") + height.to_bytes(4, "big")
+            + bytes([8, 0, 0, 0, 0]))       # 8 位灰度，无隔行
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+            + chunk(b"IDAT", zlib.compress(bytes(raw))) + chunk(b"IEND", b""))
+
+
+def captcha_solve(captcha, biz_url, cfg):
+    """独立完成 slide 验证，返回服务端实际签发的完整 validate；失败返回空串。
+
+    只需 captchaId。先取服务器时间，按官方前端派生全新取图参数；失败重取挑战，
+    不复用已消费的图 token，也不把账户 Cookie 发给验证码或视觉服务。
+    """
+    cap_id = str(captcha.get("captchaId") or "")
+    typ = str(captcha.get("type") or "slide")
+    if not cap_id or typ != "slide":
+        log("⚠️ 缺少 captchaId 或不是 slide 验证码，无法自动验证。")
+        return ""
+    base = urllib.parse.urlsplit(biz_url)
+    referer = f"{base.scheme}://{base.netloc}{base.path}"
+    version = cfg.get("captcha_version") or CAPTCHA_VERSION
+    max_try = max(1, int(cfg.get("captcha_max_try", 3)))
+
+    for attempt in range(1, max_try + 1):
+        if attempt > 1:
+            time.sleep(0.8)
+        try:
+            conf, _ = _captcha_call("get/conf", {"captchaId": cap_id}, referer, version)
+            params = _captcha_parameters(cap_id, conf["t"], typ)
+            data, _ = _captcha_call("get/verification/image", dict(params, referer=referer),
+                                    referer, version)
+            body = data.get("data") if isinstance(data.get("data"), dict) else data
+            images = body.get("imageVerificationVo", body)
+            if not isinstance(images, dict):
+                raise ValueError("图片响应结构无效")
+            # 字段均来自同一个响应对象，不递归混合外层业务 token/type。
+            bg_value = next((images.get(k) for k in ("shadeImage", "image", "bgImage",
+                             "bigImage", "backgroundImage", "backImage") if images.get(k)), None)
+            fg_value = next((images.get(k) for k in ("cutoutImage", "smallImage", "sliceImage",
+                             "cutImage", "sliderImage", "fgImage") if images.get(k)), None)
+            challenge_token = body.get("token")
+            bg_bytes = _image_bytes(bg_value, referer)
+            fg_bytes = _image_bytes(fg_value, referer)
+            size = _image_size(bg_bytes)
+            if not isinstance(challenge_token, str) or not challenge_token or not size:
+                log(f"⚠️ 取图缺少有效图片或挑战 token（第 {attempt}/{max_try} 次）。")
+                continue
+            bg = _decode_image(bg_bytes)
+            fg = _decode_image(fg_bytes) if fg_bytes else None
+            _save_captcha_image("bg", bg_bytes, cfg)
+            _save_captcha_image("fg", fg_bytes, cfg)
+            if not bg and bg_bytes[:2] == b"\xff\xd8":
+                log("ℹ️ JPEG 本地匹配需要 Pillow：python -m pip install Pillow；本次尝试视觉兜底。")
+
+            x = cfg.get("captcha_x")
+            source = "手动指定"
+            if x is None:
+                x = _locate_gap(bg, fg)
+                source = "像素匹配"
+                if x is None:
+                    x = _vision_locate_x(bg_bytes, fg_bytes, size, cfg)
+                    source = "视觉模型"
+                if x is not None:
+                    # 官方标准主题固定 320 CSS 像素；手动 x 已是协议坐标，不重复缩放。
+                    scale = 320.0 / size[0] * float(cfg.get("captcha_scale", 1.0))
+                    x = int(math.floor(x * scale + 0.5))
+            fg_size = _image_size(fg_bytes)
+            max_x = 320 * (1 - fg_size[0] / size[0]) if fg_size else 319
+            if type(x) is not int or not 0 <= x <= max_x:
+                log(f"⚠️ 未能得到有效滑块位移（第 {attempt}/{max_try} 次），重取新挑战。")
+                continue
+            log(f"🧩 滑块 x={x}（{source}，第 {attempt}/{max_try} 次）")
+            res, _ = _captcha_call("check/verification/result", {
+                "captchaId": cap_id, "type": typ, "token": challenge_token,
+                "coordinate": "[]", "runEnv": "10", "t": "c", "iv": params["iv"],
+                "textClickArr": json.dumps([{"x": x}], separators=(",", ":")),
+            }, referer, version)
+            validate = _captcha_validate(res, cap_id, challenge_token)
+            if validate:
+                log("✅ 验证码服务端确认通过（result=true，已取得本挑战的 validate）。")
+                return validate
+            log(f"⚠️ 验证码未通过或缺少有效凭证（第 {attempt}/{max_try} 次）。")
+        except (OSError, KeyError, TypeError, ValueError) as e:
+            log(f"⚠️ 验证码请求/解析失败（{type(e).__name__}，第 {attempt}/{max_try} 次）。")
+    return ""
+
+
+def _exam_meta_from_page(html, url):
+    """从考试页隐藏域（缺省回落到 URL query）取交卷需要的参数。"""
+    q = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+
+    def pick(*names):
+        for n in names:
+            if q.get(n):
+                return q[n][0]
+        return ""
+
+    return {
+        "examId": _html_hidden(html, "examId") or pick("examId"),
+        "courseId": _html_hidden(html, "courseId") or pick("courseId"),
+        "classId": _html_hidden(html, "classId") or pick("classId"),
+        "cpi": _html_hidden(html, "cpi") or pick("cpi"),
+        "answerId": _html_hidden(html, "answerId") or pick("examAnswerId", "answerId"),
+        "sdlkey": _html_hidden(html, "sdlkey"),
+        "code": _html_hidden(html, "code"),
+    }
+
+
+def _exam_check_url(meta, biz_url, captchavalidate=""):
+    """拼 examcheck 地址；把 /examcode/examnotes 换成 /examcheck。"""
+    p = urllib.parse.urlsplit(biz_url)
+    path = p.path
+    for suffix in ("/examcode/examnotes", "/examnotes", "/examcode/"):
+        if path.endswith(suffix):
+            path = path[: -len(suffix)] + "/examcheck"
+            break
+    else:
+        path = EXAM_CHECK_PATH
+    return f"{p.scheme}://{p.netloc}{path}?" + _qs({
+        "view": "json", "answerId": meta.get("answerId", ""),
+        "examId": meta.get("examId", ""), "classId": meta.get("classId", ""),
+        "courseId": meta.get("courseId", ""), "cpi": meta.get("cpi", ""),
+        "code": meta.get("code", ""), "sdlkey": meta.get("sdlkey", ""),
+        "facekey": "", "captchavalidate": captchavalidate, "_signcode": "",
+    })
+
+
+def exam_submit(exam_url, cfg, x_override=None):
+    """兼容旧命令：请求 examcheck 并按需验证；返回该接口是否通过。
+
+    业务语义未核实，不代表最终交卷。仅显式调用，不能用于验证码自检或监控循环。
+    """
+    if not exam_url:
+        log("用法：python monitor.py --exam-submit <考试页URL> [--exam-x <滑块x>]")
+        return False
+    if x_override is not None:
+        cfg = dict(cfg, captcha_x=x_override)
+    log("开始请求 examcheck（该接口通过不代表最终交卷）。")
+    try:
+        html, final_url = _http_get(
+            exam_url, referer="https://notice.chaoxing.com/pc/notice/myNotice")
+    except Exception as e:
+        log(f"⚠️ 打开考试页失败：{type(e).__name__}: {e}")
+        return False
+    if "passport" in final_url:
+        log("⚠️ 打开考试页被跳到登录页：先跑 python monitor.py --login 刷新会话。")
+        return False
+    already = "/exam/test/look" in final_url
+    if already:
+        log("ℹ️ 已跳到答题记录页（/exam/test/look），继续查询服务端状态，不据此判定已提交。")
+
+    meta = _exam_meta_from_page(html, final_url)
+    miss = [k for k in ("examId", "courseId", "classId", "cpi", "answerId") if not meta.get(k)]
+    if miss:
+        log(f"⚠️ 考试页缺少参数 {miss}：可能还没点“开始考试”生成 answerId，或页面结构变了。")
+        log(f"   解析结果：{meta}（页面 {len(html)} 字节，{final_url[:120]}）")
+        return False
+    log("考试参数：" + " ".join(f"{k}={meta[k]}" for k in
+                            ("examId", "answerId", "classId", "courseId", "cpi")))
+
+    validate = ""
+    max_try = max(1, int(cfg.get("captcha_max_try", 3)))
+    for attempt in range(max_try + 1):
+        # 初始请求 + 每个成功凭证对应的一次最终请求；最后一次凭证也必须真正发出。
+        if attempt == 0 or validate:
+            url = _exam_check_url(meta, final_url, validate)
+            try:
+                raw, _ = _http_get(url, referer=final_url)
+            except Exception as e:
+                log(f"⚠️ examcheck 请求失败：{type(e).__name__}")
+                return False
+            data = _jsonp(raw)
+            if not isinstance(data, dict):
+                log("❌ examcheck 未返回 JSON 对象。")
+                return False
+        validate = ""
+        kind = _exam_result_tag(data)
+        msg = str(data.get("msg") or data.get("message") or "").strip()
+        if kind == "ok":
+            log("✅ examcheck 校验通过（不据此宣称最终交卷成功）。")
+            return True
+        if kind == "done":
+            log("✅ 服务端明确提示已提交，无需重复操作。")
+            return True
+        if kind == "over":
+            log(f"⏰ {msg or '考试已过期/已结束'}（停止请求）。")
+            return False
+        if kind != "captcha":
+            log("❌ examcheck 未通过，且未要求滑块验证。")
+            return False
+        if attempt == max_try:
+            break
+        log(f"🧩 examcheck 需要滑块验证（第 {attempt + 1}/{max_try} 次）")
+        context = data.get("captcha") or data.get("data") or data
+        cap_id = context.get("captchaId") if isinstance(context, dict) else None
+        captcha = {"captchaId": cap_id or EXAM_CAPTCHA_ID, "type": "slide"}
+        validate = captcha_solve(captcha, final_url, dict(cfg, captcha_max_try=1))
+    log("⚠️ 验证码重试次数用尽，examcheck 仍未通过。")
+    return False
 
 
 # --------------------------------------------------------------------------
@@ -1391,7 +2243,9 @@ def run_monitor(cfg, dry_run=False):
                             log("  打开浏览器失败：", e)
                         # 打开后接管保活：每分钟对 doWork 页发一次保存请求
                         start_keepalive(t["url"], cfg, t["title"])
-                    seen.add(t["sid"])
+                    seen[t["sid"]] = None
+                    while len(seen) > SEEN_KEEP:
+                        seen.pop(next(iter(seen)))
                 save_seen(seen)
             else:
                 log_idle(f"本次无新{label}（来源 {source}，返回 {len(notices)} 条通知）。")
@@ -1427,6 +2281,90 @@ def handle_sig(signum, frame):
     sys.exit(0)
 
 
+def do_exam_submit_cmd():
+    """CLI：--exam-submit <考试页URL> [--exam-x N]。一次性动作，不参与单实例互斥。"""
+    global LOGF
+    argv = sys.argv
+    url, x = "", None
+    i = argv.index("--exam-submit")
+    if i + 1 < len(argv) and not argv[i + 1].startswith("--"):
+        url = argv[i + 1]
+    if "--exam-x" in argv:
+        j = argv.index("--exam-x")
+        if j + 1 < len(argv):
+            try:
+                x = int(argv[j + 1])
+            except ValueError:
+                print("--exam-x 需要整数协议位移，不能填写小数或说明文字。")
+                sys.exit(2)
+        else:
+            print("--exam-x 后缺少整数位移。")
+            sys.exit(2)
+    cfg = load_config()
+    try:
+        LOGF = open(MONITOR_LOG_PATH, "a", encoding="utf-8", buffering=1)
+    except Exception:
+        LOGF = None
+    ok = False
+    try:
+        init_jar(cfg)
+        ok = exam_submit(url, cfg, x)
+    finally:
+        if jar_to_header(_JAR):
+            persist_jar()
+        if LOGF is not None:
+            try:
+                LOGF.close()
+            except Exception:
+                pass
+    sys.exit(0 if ok else 1)
+
+
+def do_captcha_check_cmd():
+    """CLI：独立验证验证码，不初始化账户会话、不请求任何考试接口。"""
+    count = 1
+    if "--captcha-count" in sys.argv:
+        i = sys.argv.index("--captcha-count")
+        try:
+            count = int(sys.argv[i + 1])
+        except (IndexError, ValueError):
+            print("--captcha-count 需要 1 到 20 的整数。")
+            sys.exit(2)
+    if not 1 <= count <= 20 or "--exam-submit" in sys.argv:
+        print("验证码自检最多 20 组，且不能与 --exam-submit 同时使用。")
+        sys.exit(2)
+    cfg = load_config(require_auth=False)
+    passed = 0
+    print("独立滑块验证：不携带账户 Cookie，不访问考试页或 examcheck。")
+    for i in range(count):
+        if i:
+            time.sleep(1)
+        print(f"\n--- 验证 {i + 1}/{count} ---")
+        if captcha_solve({"captchaId": EXAM_CAPTCHA_ID}, CAPTCHA_REFERER, cfg):
+            passed += 1
+    print(f"\n服务端确认通过：{passed}/{count} 组（每组最多 {cfg.get('captcha_max_try', 3)} 次新挑战）。")
+    sys.exit(0 if passed == count else 1)
+
+
+def do_vision_check_cmd():
+    """CLI：--vision-check。用一张合成的带缺口图片自检视觉 API 是否可用。"""
+    cfg = load_config(require_auth=False)
+    conf = _vision_config(cfg)
+    if not conf:
+        print('未启用视觉模型：请在 个人任务/.env 写一行 VISION_API_KEY（默认走 DeepSeek 的 '
+              'deepseek-flash）；换别的服务再加 VISION_BASE_URL / VISION_MODEL，'
+              '并确认 config.captcha_vision 不是 "off"。')
+        sys.exit(1)
+    print(f"视觉模型 {conf['model']} @ {conf['base']}，超时 {conf['timeout']:.0f}s")
+    print("探针图 80x40，缺口左边缘在 x=40，只校验接口通不通、格式对不对。")
+    x = _vision_locate_x(_probe_png(), None, (80, 40), cfg)
+    if x is None:
+        print("❌ 没拿到可用的 x，检查 base_url / key / model 是否为 OpenAI 兼容的图片接口。")
+        sys.exit(1)
+    print(f"✅ 视觉模型返回 x={x}（参考值 40，偏差 {abs(x - 40)} 像素）")
+    sys.exit(0)
+
+
 def main():
     global LOGF
     args = set(sys.argv[1:])
@@ -1439,6 +2377,17 @@ def main():
         return
     if "--daemon" in args:
         do_daemon()
+        return
+    # 自检不加载账户 Cookie，也不触碰考试状态。
+    if "--captcha-check" in args:
+        do_captcha_check_cmd()
+        return
+    # 兼容旧命令名；examcheck 的业务语义尚不能等同于最终交卷。
+    if "--exam-submit" in args:
+        do_exam_submit_cmd()
+        return
+    if "--vision-check" in args:
+        do_vision_check_cmd()
         return
 
     cfg = load_config()

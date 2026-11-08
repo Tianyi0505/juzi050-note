@@ -17,6 +17,7 @@
   "keepalive_max_hours": 12,
   "keepalive_max_fail": 5,
   "keepalive_carry_answers": true,
+  "captcha_vision": "auto",
   "request_body_template": "type=2&notice_type=&lastValue=&sort=&folderUUID=&kw=&startTime=&endTime=&gKw=&gName=&year={YEAR}&tag=&fidsCode=&queryFolderNoticePrevYear=0&filterSenderPuids=&filterTags=",
   "headless": false
 }

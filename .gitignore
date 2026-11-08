@@ -30,6 +30,8 @@ CLAUDE.local.md
 学习通脚本/keepalive.json
 学习通脚本/monitor.pid
 学习通脚本/__pycache__/
+学习通脚本/tests/__pycache__/
+学习通脚本/captcha/
 
 # WorkBuddy 本地状态目录
 .workbuddy/
